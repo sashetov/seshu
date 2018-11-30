@@ -1,0 +1,74 @@
+#!/bin/bash
+function include_common(){
+  . "${HOME}/bin/lib/common.inc.sh";
+}
+function print_usage(){
+  note_to_stdout 'USAGE' '%s [video_file]\n' "$SN";
+  printf '    [video_file]    a video file\n';
+  note_to_stdout 'NOTE' '%s params in "[]" are REQUIRED\n' '-';
+}
+function print_help(){
+  export SN=$( basename $0 )
+  export SPACER="";
+  if [[ $# -gt 0 ]]; then 
+    err_to_stderr " INVALID INVOCATION:\n $SN $*\n\n"
+    print_usage;
+    exit 255;
+  else print_usage;
+  fi;
+}
+function open_srt() {
+  start_xtrace
+  padl "[ ! -f $SRT_NAME ] && srt-minutes $V_NAME;";
+  padl "gvim $SRT_NAME 2>/dev/null >/dev/null &";
+  stop_xtrace
+}
+function handle_params(){
+  start_xtrace
+  declare -a PARAMS=( ${@:1:$MAXP} );
+  export NP=${#PARAMS[@]};
+  if [ $NP -lt $MINP ] || [ $NP -gt $MAXP ]; then 
+    err_to_stderr " $NP number of arguments provided is not in range [$MINP,$MAXP]\n";
+    print_help "$*";
+  fi;
+  export V_NAME=$1;
+  export SRT_NAME=$( echo "$V_NAME"| sed -r 's/(.+)\.[^\.]+$/\1.srt/g' );
+  export D=$( ffprobe $V_NAME 2>&1 | grep Duration | awk '{ print $2; }' | sed -r 's/[,:\.]/ /g' | sed -r 's/0([0-9])/\1/g' );
+  export MINS=$( echo $D  | awk '{ print $1"*60+"$2; }' | bc );
+  stop_xtrace
+}
+function launch_mplayer_window(){
+  start_xtrace
+  export SS=$( echo "$M*60" | bc );
+  export PGEOM="-xy 1 -geometry 512x640";
+  export SRT="-utf8  -osdlevel 3 -subalign 2 -subfont-osd-scale 5 -subfont-text-scale 10 ";
+  export SEEK="-ss ${SS}";
+  export PLAYBACK="-speed 2 -volume 0";
+  export CMD="mplayer ${GEOM} ${PLAYBACK} ${SRT} ${SEEK} ${V_NAME} | logger -i";
+  padl $CMD;
+  stop_xtrace
+}
+function play_out_minutes() {
+  start_xtrace
+  for M in $( seq 0 $MINS ); do
+    launch_mplayer_window;
+  done;
+  stop_xtrace
+}
+function fill_srt(){
+  start_xtrace
+  handle_params $*
+  open_srt;
+  play_out_minutes;
+  stop_xtrace
+}
+function __main__() {
+  include_common
+  let DEBUG=0; #defaults
+  start_xtrace
+  export MAXP=1;
+  export MINP=1;
+  fill_srt $*
+  stop_xtrace
+}
+__main__ $*

@@ -1,0 +1,13 @@
+#!/bin/bash
+function df_ultra() {
+  export TEMPFILE=`mktemp`
+  df --sync --total  --block-size=1048576 -a --output=source,fstype,itotal,iused,iavail,ipcent,size,used,avail,pcent,file,target --direct -h | sort -k 2 | column -t > $TEMPFILE;
+  grep -E 'Filesystem.+$' $TEMPFILE;
+  cat $TEMPFILE | grep -Ev 'total|Filesystem';
+  grep -E 'total.+$' $TEMPFILE;
+  rm -f $TEMPFILE
+}
+function __main__() {
+  df_ultra "$*";
+}
+__main__ "$*"

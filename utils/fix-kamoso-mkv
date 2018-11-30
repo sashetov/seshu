@@ -1,0 +1,33 @@
+#!/bin/bash
+export SCRIPT_ROOT=$( dirname "$( dirname $(readlink -f $0) ) ");
+export USERBIN_LIB="${SCRIPT_ROOT}/lib";
+export COMMON_FUNCS="${USERBIN_LIB}/common.inc.sh";
+function fix_kamoso(){
+  export D="/data/videos/webcam"
+  export ND="${D}/$( datets_print )"
+  export E=$( echo $1 | sed -r 's/(.+)\.([^.]+)$/\2/g' );
+  export O=$( echo $(basename $1) | sed -r 's/(.+)\.([^.]+)$/\1/g' );
+  export OF=$1
+  export NF="${O}-fixed.${E}"
+  if [ -f $OF ]; then 
+    ffmpeg -report -y -ss 5 -i "${OF}" -c copy "${NF}" &&
+      rm -f "${OF}" && 
+      mkdir -p "${ND}" &&
+      ffmpeg -i "${NF}" -vf hflip -c:a copy "$ND/$O.$E" &&
+      rm -f "${NF}" ||
+      echo ERR: something went wrong! >&2
+  else
+    echo "ERR: no such file ${OF}" >&2
+    exit 2;
+  fi;
+}
+function __main__() {
+  if [ -f $COMMON_FUNCS ]; then 
+    . $COMMON_FUNCS
+    fix_kamoso $*
+  else
+    echo -en "file not found:\n$COMMON_FUNCS"
+    exit 1;
+  fi;
+}
+__main__ $*

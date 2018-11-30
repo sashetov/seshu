@@ -1,0 +1,27 @@
+#!/bin/bash
+function __main__(){
+  if [ $# -gt 0 ]; then 
+    F=( "$@" );
+    while read I; do 
+      if [ -d $I ] && [ $I != '.' ]  && [ $I != '..' ]; then
+        while read f; do
+          NF+=( "$f" );
+        done< <( find $I/ -maxdepth 1 )
+      else
+        NF+=( "$I" );
+      fi;
+    done < <( for i in "${F[@]}"; do echo $i; done; )
+  else
+    while read f; do
+      NF+=( "$f" );
+    done < <( find . -maxdepth 1 | sed -r 's/\.\///g' )
+  fi;
+  {
+    stat --format='%Y|%s|%a|%A|%u|%g|%N' ${NF[@]} | while read l; do
+      export TS=`echo $l | sed -r 's/\|.+//g'`;
+      export D=$(date -Iseconds --date="@$TS" | sed -r 's/[^0-9]//g' | head -c 14);
+      echo $l | sed -r "s/$TS/$D/g";
+    done;
+  } | column  -t -s '|'  -o ' ' | sort -k 6;
+}
+__main__ $*

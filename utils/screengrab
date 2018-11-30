@@ -1,0 +1,107 @@
+#!/bin/bash
+function include_common(){
+  . "$HOME/bin/lib/common.inc.sh";
+}
+function print_usage(){
+  note_to_stdout 'USAGE' '%s [dst] (name)\n' "$SN";
+  printf '  [dst]   required param for where to store video\n';
+  printf '  (name)  the filename will be of the format "${ts}--${name}.%s", where ts is a timestamp and name is the optional param described bere\n' ${EXT};
+}
+function print_help(){
+  [[ $# -gt 0 ]] && errmsg_usage_exit 255 "INVALID INVOCATION: $INVOKED_WITH\n";
+  print_usage;
+}
+function errmsg_usage_exit(){
+  export ERR_STATUS=$1;
+  export ERR_MSG=$2;
+  [[ $ERR_STATUS -eq 0 ]] && note_to_stdout "HELP" "\n${ERR_MSG}\n" || err_to_stderr "   ${ERR_MSG}\n";
+  print_usage;
+  exit ${ERR_STATUS};
+}
+function params_handler(){
+  start_xtrace
+  declare -a PARAMS=( ${@:$OPTIND:$MAXARGC} );
+  let N=${#PARAMS[@]};
+  [ $N -lt $MINP ] || [ $N -gt $MAXP ] && errmsg_usage_exit 254 "BAD PARAMS:\n${N}!(=[$MINP,$MAXP]\n";
+  [ -z $DISPLAY ] && errmsg_usage_exit 1 " please export correct DISPLAY variable for your X11 server's screen";
+  case $# in
+    1) export D="$1"; export NAME=$DEFAULT_NAME; ;;
+    2) export D="$1"; export NAME="$2"; ;;
+  esac
+  [ -d $D ] || mkdir -p $D || errmsg_usage_exit 3 "cannot create dir $D";
+  export DTSTR=$( date +'%Y-%m-%d-%H-%M' );
+  export FILENAME_PREFIX="${DTSTR}--${NAME}";
+  export PARAMS_VALID=1;
+  stop_xtrace
+}
+function start_minicam(){
+  start_xtrace
+  [ -z $PARAMS_VALID ] && params_handler $*;
+  export MC_CMD='mplayer tv:// /dev/video* &';
+  echo "${MC_CMD}" && eval $MC_CMD &
+  stop_xtrace
+}
+function start_recording_cam(){
+  start_xtrace
+  [ -z $PARAMS_VALID ] && params_handler $*;
+  export RC_CMD="camera-to-mpg ${FILENAME_PREFIX} ${D} &";
+  echo $RC_CMD;
+  eval $RC_CMD &
+  stop_xtrace
+}
+function kill_cam_ffmpeg(){
+  start_xtrace
+  kill $( pgrep -f "$RC_CMD" ) 2>/dev/null >/dev/null;
+  stop_xtrace
+}
+function kill_minicam_mplayer(){
+  start_xtrace
+  kill $( pgrep -f "$MC_CMD" ) 2>/dev/null >/dev/null;
+  stop_xtrace
+}
+function kill_grab_ffmpeg(){
+  start_xtrace
+  kill $( pgrep -f "$CMD_GRAB" ) 2>/dev/null >/dev/null;
+  stop_xtrace
+}
+function grab_screen(){
+  start_xtrace
+  [ -z $PARAMS_VALID ] && params_handler $*;
+  export EXT="mp4";
+  export VFR="30";
+  export AFORMAT="pulse";
+  export ACHAN="1";
+  export ASRC_PA=$( get_pa_in_src 0 );
+  export VFORMAT='x11grab';
+  export AOPTS="-f '${AFORMAT}' -ac '${ACHAN}' -i '${ASRC_PA}'";
+  export VSIZE=$(xrandr | grep -i vga | sed -r 's/^VGA-[0-9] connected (primary )?([0-9]+x[0-9]+).+$/\2/g' | head -n 1 );
+  export VOPTS="-f '${VFORMAT}' -s '${VSIZE}' -framerate '${VFR}' -i '${DISPLAY}'";
+  export DST="${D}/${FILENAME_PREFIX}.${EXT}";
+  export CMD_GRAB="ffmpeg -y ${AOPTS} ${VOPTS} ${DST}"
+  echo $CMD_GRAB && eval $CMD_GRAB;
+  stop_xtrace
+}
+function grab_with_cam(){
+  start_xtrace [ -z $PARAMS_VALID ] && params_handler $*;
+  #start_minicam $*;
+  start_recording_cam $*;
+  grab_screen $*;
+  kill_cam_ffmpeg;
+  kill_minicam_mplayer;
+  #kill_grab_ffmpeg
+  stop_xtrace
+}
+function __main__(){
+  include_common
+  let DEBUG=0; #DEFAULTS
+  start_xtrace
+  export MINP=1
+  export MAXP=2
+  export SN=$( basename $0 );
+  export INVOKED_WITH="${SN} ${ORIG_ARGS[*]}";
+  declare -a ORIG_ARGS=( ${@:0:$MAXARGC} );
+  export DEFAULT_NAME='vid';
+  grab_with_cam ${ORIG_ARGS[*]:1:$MAXARGC};
+  stop_xtrace
+}
+__main__ $*

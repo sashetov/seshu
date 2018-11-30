@@ -1,0 +1,5 @@
+#!/bin/bash
+PHONE_IP='192.168.0.13';
+MNT_POINT='/srv/huawei-p9/';
+PORT=1739;
+sshfs kdeconnect@$PHONE_IP:/ $MNT_POINT -p $PORT -s -f -F /dev/null -o IdentityFile=/home/sasheto/.config/kdeconnect/privateKey.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=ssh-dss -o uid=1000 -o gid=1001 -o ServerAliveInterval=30 -o password_stdin 

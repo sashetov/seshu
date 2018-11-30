@@ -1,0 +1,36 @@
+#!/bin/bash
+export SCRIPT_ROOT=$(readlink -f $(dirname $(dirname $(dirname $(readlink -f $0)))));
+export LIB_DIR="$SCRIPT_ROOT/lib";
+. $LIB_DIR/common.inc.sh
+export RTUNNEL_LOCALPORT='2220';
+export RELAY_USER='sasheto';
+export RELAY_HOST='vassilevski.com';
+export OFFICE_SSH="ssh -p 2220 sasheto@127.0.0.1"
+export REMOTE_JOB_CONTROL_CMD="/home/sasheto/bin/rtunnel-ssh-job-control.sh";
+export TUNNEL_HOSTNAME=$(hostname);
+function stop_rtunnel { #echo -e '1. STOPPING REVERSE TUNNEL REMOTELY AND HERE:\n  - stopping ssh daemon'
+  sudo service sshd stop; #echo -e '  - killing any remaining connections by user r_ssh_user'
+  sudo kill -9 $(pgrep -u r_ssh_user); #echo -e '  - stopping remote supervisord group for reverse ssh tunnel';
+  ssh "${RELAY_USER}@${RELAY_HOST}" "${OFFICE_SSH} "'"'"${REMOTE_JOB_CONTROL_CMD} ${TUNNEL_HOSTNAME} stop"'"';#echo -e '  - starting sshd again';
+  sudo service sshd start;
+}
+function start_rtunnel { #echo -e "2. STARTING REMOTE REVERSE SSH TUNNEL GROUP FOR THIS THIS HOST(${TUNNEL_HOSTNAME}):"
+  ssh "${RELAY_USER}@${RELAY_HOST}" "${OFFICE_SSH} "'"'"${REMOTE_JOB_CONTROL_CMD} ${TUNNEL_HOSTNAME} start"'"';
+}
+function list_rtunnel_conns {
+  sudo netstat -npla | grep --color=auto ":${RTUNNEL_LOCALPORT}" | wc -l
+}
+function restart_reverse_tunnel {
+  stop_rtunnel
+  start_rtunnel
+}
+function __main__(){
+  restart_reverse_tunnel;
+  export NUM_RTUNNEL_CONNS=$( list_rtunnel_conns | wc -l );
+  while [ ! $NUM_RTUNNEL_CONNS -gt 0 ]; do { #echo "NUM_RTUNNEL_CONNS=${NUM_RTUNNEL_CONNS};";
+    export NUM_RTUNNEL_CONNS=$( list_rtunnel_conns | wc -l );
+    sleep 1;
+  }; done;
+  list_rtunnel_conns; #echo "You can now connect ot this host";
+}
+__main__ $*

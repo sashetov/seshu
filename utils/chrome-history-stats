@@ -1,0 +1,12 @@
+#!/bin/bash
+function run_sql() {
+  export F='/home/sasheto/.config/google-chrome/Default/History';
+  export T=$(mktemp)
+  sudo cp $F $T
+  sqlite3 $T -header "$*;" | column -t -s '|'
+  rm -f $T
+}
+echo top10 all time:
+run_sql 'SELECT datetime(last_visit_time / 1000000 + (strftime("%s", "1601-01-01")), "unixepoch") as ts, url, visit_count FROM urls WHERE id > 0 ORDER BY visit_count DESC LIMIT 10;'
+echo last 24h:
+run_sql 'SELECT (last_visit_time / 1000000 + strftime("%s", "1601-01-01")) AS ts,url,visit_count,datetime(last_visit_time / 1000000 + (strftime("%s", "1601-01-01")), "unixepoch") AS dt FROM urls WHERE ts > (strftime("%s","now")-(24*3600)) ORDER BY last_visit_time DESC;'

@@ -1,0 +1,18 @@
+#!/bin/bash
+function parse_results(){
+  SCRIPT_ROOT=$( dirname "$( dirname $(readlink -f $0) ) ");
+  USERBIN_LIB="${SCRIPT_ROOT}/lib";
+  . $USERBIN_LIB/common.inc.sh
+  Q=$*
+  Q=$( print_qs $Q );
+  echo $Q
+  P="http://wiki.vassilevski.com/index.php?title=Special%3ASearch&profile=advanced&search=";
+  S="&fulltext=Search&ns0=1&ns1=1&ns2=1&ns3=1&ns4=1&ns5=1&ns6=1&ns7=1&ns8=1&ns9=1&ns10=1&ns11=1&ns12=1&ns13=1&ns14=1&ns15=1&ns102=1&ns103=1&ns104=1&ns105=1&ns108=1&ns109=1&profile=advanced";
+  #U="${P}${Q}${S}"; { echo $U; w3m -dump "${U}" 2>&1 ; } | less
+  U="http://wiki.vassilevski.com/api.php?format=json&action=query&list=search&srsearch=${Q}&utf8="; echo $U; w3m -dump "${U}" 2>&1 | tr '\n' ' ' | sed -r 's/\s+//g'  | iconv -f iso8859-1 -t utf-8  | python3 -m json.tool | less
+  U="http://wiki.vassilevski.com/api.php?action=query&format=json&prop=revisions&generator=allpages&utf8=1&ascii=1&rvprop=content&gapfrom=Re&gapfilterredir=nonredirects&gaplimit=2000"; curl "${U}" 2>/dev/null | iconv -f iso8859-1 -t utf-8  | python3 -m json.tool | less; #| tr '\n' ' ' | sed -r 's/\s+//g'  | iconv -f iso8859-1 -t utf-8  | python3 -m json.tool | less
+}
+function __main__(){
+  parse_results $*
+}
+__main__ $*

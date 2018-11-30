@@ -1,0 +1,70 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  . "$HOME/bin/lib/common.inc.sh";
+}
+function print_usage(){
+  note_to_stdout "INVOKED WITH" "$INVOKED_WITH\n";
+  note_to_stdout 'USAGE' '%s\n' "$SN";
+}
+function errmsg_help_exit(){
+  export ERR_STATUS=$1;
+  export ERR_MSG=$2;
+  err_to_stderr "${ERR_MSG}\n" && print_usage && exit $ERR_STATUS;
+}
+function print_help(){
+  export ES=1;
+  export EM=" INVALID INVOCATION:";
+  if [[ $# -gt 0 ]]; then 
+    errmsg_help_exit "$ES" "$EM";
+  else 
+    print_usage; 
+  fi;
+}
+function getopts_handler(){
+  export OPTIND=1;
+}
+function params_handler(){
+  start_xtrace
+  declare -a PS=( ${@:$OPTIND:$MAXARGC} );
+  export N=${#PS[@]};
+  if [ $N -lt $MIN_PARAMS ] || [ $N -gt $MAX_PARAMS ]; then
+    export ES=2;
+    export EM=" argnum_not_in_range $N !(= [$MIN_PARAMS,$MIN_PARAMS]";
+    errmsg_help_exit "$ES" "$EM";
+  fi;
+  stop_xtrace
+}
+function delete_all_buffers() {
+  start_xtrace
+  export CURR_BUFFS=$( tmux list-buffers | sed -r 's/^([^:]+).+$/\1/g' );
+  for B in $CURR_BUFFS; do
+    export CMD="tmux deleteb -b ${B};";
+    padl ${CMD};
+  done;
+  stop_xtrace
+}
+function tmux_info(){
+  start_xtrace;
+  getopts_handler $*;
+  params_handler $*;
+  for T in sessions windows buffers panes clients keys commands; do
+    export NN=$( echo $T | sed -e 's/\(.*\)/\U\1/' );
+    export CMD="tmux list-${T}";
+    printf '%s:\n\n' ${NN} && padl ${CMD} && printf '\n';
+    print_help $*
+  done;
+  stop_xtrace
+}
+function __main__(){
+  include_common;
+  let DEBUG=0; #defaults
+  start_xtrace;
+  export SN=$( basename $0 )
+  declare -a ORIG_ARGS=( ${@:0:$MAXARGC} );
+  export INVOKED_WITH="${SN} ${ORIG_ARGS[*]}"
+  export MIN_PARAMS=0;
+  export MAX_PARAMS=0;
+  tmux_info ${ORIG_ARGS[*]:1:$MAXARGC};
+  stop_xtrace;
+}
+__main__ $*

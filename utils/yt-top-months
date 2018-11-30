@@ -1,0 +1,38 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  SCRIPT_ROOT=$( dirname $( dirname $(readlink -f "$0") ) );
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib/common.inc.sh";
+  . "$USERBIN_LIB"
+}
+function print_help(){
+  export SN=$( basename $0 )
+  export SPACER="";
+  if [ $# -gt $MAX ] || [ $# -lt $MIN ]; then
+    printf 'INVALID INVOCATION:\n'
+    printf '%s %s\n\n' $SN "$*";
+    exit
+  fi;
+  note_to_stdout 'USAGE' '%s [DD]\n' "$SN";
+  printf '    (DD)  = directory for youtube years/months mp3 collection - defaults to /data/music/files/youtube/\n';
+  note_to_stdout 'NOTE' '%s options in "()" are OPTIONAL\n' '-';
+}
+function print_top_yt_months() {
+  export DS=$( find $DD -type d );
+  declare -a DDD=( $DS );
+  { for D in ${DS[*]}; do export D=$( readlink -f $D/); export N=$(find -P $D -type f | wc -l ); printf "%s %s\n" $N $D; done; } | grep -vE "(youtube|20[0-9]{2})$" | sort -nr;
+}
+function shutil_params_validator() {
+  if [ $# -eq 1 ]; then export DD="${1}"; fi;
+  print_top_yt_months;
+}
+function __main__(){
+  include_common
+  let DEBUG=0; #defaults
+  start_xtrace
+  export MIN=0;
+  export MAX=2000;
+  export DD='/data/music/files/youtube/';
+  shutil_params_validator $*
+  stop_xtrace
+}
+__main__ $*

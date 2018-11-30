@@ -1,0 +1,89 @@
+#!/bin/bash
+function install_lxd(){
+  set -e
+  USER_ADDED_TO_LXD_GROUP="${USER}"
+  dnf install -y lxc-devel
+  sudo groupadd -r lxd
+  sudo mkdir -p /var/lib/lxd
+  sudo chown root:lxd /var/lib/lxd
+  sudo mkdir -p /var/log/lxd
+  sudo chown root:lxd /var/log/lxd
+  dnf install -y git golang sqlite-devel dnsmasq squashfs-tools libacl-devel
+  export GOPATH=${HOME}/go
+  export PATH=${GOPATH}/bin/:${PATH}
+  go get -v -x -tags libsqlite3 github.com/lxc/lxd/lxc github.com/lxc/lxd/lxd
+  sudo cp "${GOPATH}"/bin/* /usr/bin/
+  cat <<EOF | sudo tee /usr/lib/systemd/system/lxd.service
+[Unit]
+Description=LXD - main daemon
+After=network.target
+Requires=network.target lxd.socket
+Documentation=man:lxd(1)
+
+[Service]
+EnvironmentFile=-/etc/environment
+ExecStart=/usr/bin/lxd --group lxd --logfile=/var/log/lxd/lxd.log
+ExecStartPost=/usr/bin/lxd waitready --timeout=600
+KillMode=process
+TimeoutStartSec=600
+TimeoutStopSec=40
+Restart=on-failure
+LimitNOFILE=infinity
+LimitNPROC=infinity
+
+[Install]
+Also=lxd.socket
+EOF
+  cat <<EOF | sudo tee /usr/lib/systemd/system/lxd.socket
+[Unit]
+Description=LXD - unix socket
+Documentation=man:lxd(1)
+
+[Socket]
+ListenStream=/var/lib/lxd/unix.socket
+SocketGroup=lxd
+SocketMode=0660
+Service=lxd.service
+
+[Install]
+WantedBy=sockets.target
+EOF
+  cat <<EOF > my-systemd.te
+module my-systemd 1.0;
+require {
+  type init_t;
+  type unconfined_service_t;
+  type var_lib_t;
+  class unix_stream_socket { create setopt bind listen };
+  class sock_file { create setattr unlink };
+}
+#============= init_t ==============
+allow init_t unconfined_service_t:unix_stream_socket { create setopt bind listen };
+allow init_t var_lib_t:sock_file { create setattr unlink };
+EOF
+  checkmodule -M -m -o my-systemd.mod my-systemd.te
+  semodule_package -m my-systemd.mod -o my-systemd.pp
+  sudo semodule -i my-systemd.pp
+  rm -f my-systemd.te my-systemd.mod my-systemd.pp
+  sudo systemctl --system daemon-reload
+  sudo systemctl enable lxd
+  sudo systemctl start lxd
+  cat <<EOF | sudo lxd init
+yes
+default
+dir
+no
+yes
+yes
+lxdbr0
+auto
+auto
+EOF
+  dnf install -y grub2-tools
+  . /etc/default/grub
+  export V="$GRUB_CMDLINE_LINUX user_namespace.enable=1"
+  sudo sed -e "s;^GRUB_CMDLINE_LINUX=.*;GRUB_CMDLINE_LINUX=\"$V\";g" -i /etc/default/grub
+  sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  sudo gpasswd -a "${USER_ADDED_TO_LXD_GROUP}" lxd
+}
+install_lxd $*

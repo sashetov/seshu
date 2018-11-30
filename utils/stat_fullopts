@@ -1,0 +1,47 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  SCRIPT_ROOT=$( readlink -f "$0" )
+  SCRIPT_ROOT=$( dirname "$SCRIPT_ROOT" )
+  SCRIPT_ROOT=$( dirname "$SCRIPT_ROOT" );
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib/common.inc.sh";
+  . "$USERBIN_LIB"
+}
+function print_header() {
+  printf "${humanHeaders[*]}\n" | sed -r 's/\s/,/g';
+}
+function print_legend {
+  let i=0;
+  if [ ${#printfHeaders[*]} -ne ${#humanHeaders[*]} ]; then
+    err_to_stderr 'header length mismatch';
+    exit 255;
+  fi;
+  printf 'Legend:\n';
+  {
+    while [ $i -lt  ${#printfHeaders[*]} ]; do
+      export key="${humanHeaders[$i]}";
+      export val="${printfHeaders[$i]}";
+      HeaderHash["$key"]="$val";
+      printf '%b %b\n' $key $val
+      let i++;
+    done;
+  } | column -t -c 2;
+}
+function print_full_stat {
+  let i=0;
+  export C='stat --printf="';
+  while [ $i -lt  ${#printfHeaders[*]} ]; do export H="${printfHeaders[$i]}"; export C="${C}${H}\n"; let i++; done;
+  export C="${C}"'EOF\n" ';
+  if [ x"$1"x = 'xx' ]; then export C="${C}"'.* * '; else export C="${C}"'$* '; fi
+  column -t -s ',' -o ' ' < <( print_header; while read var; do if [[ $var != "EOF" ]]; then printf "'%b'," "$var" | sed -r "s/'//g"; else echo; fi done < <( eval $C ); );
+}
+function __main__() {
+  include_common
+  export DEBUG=0; # defaults
+  start_xtrace
+  declare -a humanHeaders=( 'f_name_readlink_esc' 'f_mode' 'f_perm' 'f_ballocated' 'f_bsize_allocated' 'f_device_dec' 'f_device_hex' 'f_raw_mode' 'f_type' 'f_guid' 'f_group' 'f_nlinks' 'f_inode' 'f_bsize_io' 'f_bsize' 'f_dev_maj' 'f_dev_min' 'f_uid' 'f_user' 'f_atime' 'f_mtime' 'f_ctime' );
+  declare -a printfHeaders=('%N'                  '%a'     '%A'     '%b'           '%B'                '%d'           '%D'           '%f'         '%F'     '%g'     '%G'      '%h'       '%i'      '%o'         '%s'      '%t'        '%T'        '%u'    '%U'     '%x'      '%y'      '%z'      );
+  declare -A HeaderHash=()
+  print_full_stat "$*" ;
+  stop_xtrace
+}
+__main__ $*

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# this can be done with seq -w 
+function num_to_pretty() {
+  export N=$1
+  export M=$2;
+  export L=$( printf '%s' "$N" | wc -c );
+  export D=$( echo "$M-$L" | bc);
+  export Z=$( for i in $( seq 0 $D ); do printf "0"; done; ); #printf '%s %s %s %s %s %s\n' '$N' '$M' '$L' '$D' '$Z'; #printf '%s %s %s %s %s %s' $N $M $L $D $Z;
+  printf '%s%s\n' $Z $N;
+}
+function __main__(){
+  export S=$1;
+  export E=$2;
+  export NL=$(($(printf '%s' "$E" | wc -c ) -1 ));
+  for I in $(seq $S $E); do num_to_pretty $I $NL; done;
+}
+__main__ $*;

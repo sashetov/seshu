@@ -1,0 +1,6 @@
+#!/bin/bash
+. printcal_funcs.sh
+function __main__() {
+  print_weeks_calendar_csv | tableify_weeks_cal;
+}
+__main__ $*;

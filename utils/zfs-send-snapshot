@@ -1,0 +1,69 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  SCRIPT_ROOT=$( readlink -f "$0" )
+  SCRIPT_ROOT=$( dirname "$SCRIPT_ROOT" )
+  SCRIPT_ROOT=$( dirname "$SCRIPT_ROOT" );
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib/common.inc.sh";
+  . "$USERBIN_LIB"
+}
+function run_backups() {
+  for LZFS in ${!ZBACKUP_MAP[*]}; do {
+    RZFS="${ZBACKUP_MAP[$LZFS]}"
+    start_new_backup "$LZFS" "$RZFS"
+  }; done;
+}
+function start_new_backup(){
+  check_num_params $# 2 2;
+  export LZFS=$1;
+  export RZFS=$2;
+  LZFS_FIRSTSNAP=$( sudo zfs list | grep "$LZFS@" | head -n 1 | awk '{ print $1; }');
+  RZFS_FIRSTSNAP=$( ssh  -t root@"$BACKUP_HOST" zfs list |& grep -i "$RZFS@" | head -n 1 | awk '{ print $1; }')
+  LZFS_LASTSNAP=$( sudo zfs list | grep "$LZFS@" | grep 'zss' | tail -n 1 | awk '{ print $1; }' );
+  RZFS_LASTSNAP=$( ssh -t root@"$BACKUP_HOST" zfs list |& grep -i "$RZFS@" | tail -n 1 | awk '{ print $1; }')
+  LASTSNAP_SENT_TS="$LZFS@$( echo $RZFS_LASTSNAP | sed -r 's/.+@//g' )"
+  if [ -z "$RZFS_FIRSTSNAP" ] || [ -z "$RZFS_LASTSNAP" ] ; then
+    warn_to_stdout " no REMOTE ZFS snapshots exist for $RZFS\n"
+    warn_to_stdout " only full send/receive is allowed:\n"
+    full_sendrecv "$LZFS_FIRSTSNAP" "$LZFS" "$RZFS"
+  elif [ -z "$LZFS_FIRSTSNAP" ] || [ -z "$LZFS_LASTSNAP" ]; then
+    err_to_stderr " ?? no LOCAL snaps exist for $LZFS but we have snap in REMOTE: $RZFS@#$RZFS_LASTSNAP \n"
+    exit 2;
+  else
+    incremental_sendrecv "$LZFS" "$RZFS" "$LASTSNAP_SENT_TS"
+  fi;
+}
+function full_sendrecv(){
+  check_num_params $# 3 3;
+  LZFS_FIRSTSNAP=$1
+  LZFS=$2
+  RZFS=$3
+  DTS=$(datets_print)"-zss"
+  SNAP_CMD="sudo zfs snapshot -r '$LZFS@$DTS'";
+  padl "$SNAP_CMD";
+  FULL_BACKUP_CMD="sudo zfs send '$LZFS@$LZFS_FIRSTSNAP' | ssh 'root@$BACKUP_HOST' zfs receive '$RZFS@$DTS'";
+  padl "$FULL_BACKUP_CMD";
+}
+function incremental_sendrecv(){
+  check_num_params $# 3 3
+  LZFS=$1
+  RZFS=$2
+  LAST_SENT_SNAP=$3
+  DTS=$(datets_print)"-zss"
+  SNAP_CMD="sudo zfs snapshot -r '$LZFS@$DTS'";
+  padl "$SNAP_CMD"
+  INCR_BACKUP_CMD="sudo zfs send -i '$LAST_SENT_SNAP' '$LZFS@$DTS' | ssh 'root@$BACKUP_HOST' zfs receive '$RZFS@$DTS'";
+  padl "$INCR_BACKUP_CMD";
+}
+function __main__(){
+  include_common
+  let DEBUG=0; #defaults
+  start_xtrace
+  export     BACKUP_HOST='proxmox';
+  declare -A ZBACKUP_MAP=( \
+    ['spool/data']='rpool/t430_data_backups' \
+    ['spool/home']='rpool/t430-backups-homedir' \
+  );
+  run_backups "$@"
+  stop_xtrace
+}
+__main__ "$@"

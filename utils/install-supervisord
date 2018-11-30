@@ -1,0 +1,97 @@
+#!/bin/bash
+function install_py_supervisor(){
+  sudo yum -y install python python-setuptools python-pip;
+  sudo pip install supervisor;
+}
+function ensure_superv_conf(){
+  export SUPERVDIR='/etc/supervisord';
+  export SVCONF="$SUPERVDIR/supervisord.conf";
+  sudo mkdir -p "$SUPERVDIR/conf.d/"
+  sudo echo "
+[unix_http_server]
+file=/tmp/supervisor.sock
+
+[supervisord]
+logfile=/var/log/supervisord.log
+logfile_maxbytes=50MB
+logfile_backups=10
+loglevel=info
+pidfile=/tmp/supervisord.pid
+nodaemon=false
+minfds=1024
+minprocs=200
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///tmp/supervisor.sock
+
+[include]
+files=$SUPERVDIR/conf.d/*.conf
+" > $SVCONF;
+}
+function ensure_prgrm_conf(){
+  sudo mkdir -p $LOGDIR;
+  export PRGRM_NAME='cmd';
+  export U='root';
+  export N='10';
+  export PN='%(program_name)s_%(process_num)02d';
+  export CMD='/usr/local/bin/cmd %(process_num)';
+  export WDIR="/tmp/";
+  export AUTOSTART='true';
+  export AUTORESTART='true';
+  export RETRIES_N='10000';
+  sudo echo "
+[program:${PRGRM_NAME}]
+user=${U}
+numprocs=${N}
+process_name=${PN}
+command=${CMD}
+directory=${WDIR}
+autostart=${AUTOSTART}
+autorestart=${AUTORESTART}
+startretries=${RETRIES_N}
+stdout_logfile=${LOGDIR}/${PRGRM_NAME}.log
+stdout_logfile_maxbytes=${LOGMAXB}
+stderr_logfile=${LOGDIR}/${PRGRM_NAME}.err.log
+stderr_logfile_maxbytes=${ERRLOGMAXB}
+" > $SUPERVDIR/conf.d/$PRGRM_NAME.conf;
+}
+function ensure_systemd_service(){
+  export SYSSERVICE='/usr/lib/systemd/system/supervisord.service';
+  export SVUSER='nginx';
+  sudo echo "
+[Unit]
+Description=supervisord - Supervisor process control system for UNIX
+Documentation=http://supervisord.org
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/supervisord -c $SUPERVDIR/supervisord.conf
+ExecReload=/usr/bin/supervisorctl reload
+ExecStop=/usr/bin/supervisorctl shutdown
+User=${SVUSER}
+
+[Install]
+WantedBy=multi-user.target
+" > $SYSSERVICE;
+}
+function enable_and_start_service(){
+  sudo systemctl daemon-reload;
+  sudo systemctl enable supervisord;
+  sudo systemctl start supervisord;
+  sudo systemctl status supervisord;
+}
+function __main__(){
+  export LOGDIR='/var/log';
+  export LOGMAXB='100MB';
+  export ERRLOGMAXB='100MB';
+  install_py_supervisor;
+  ensure_superv_conf;
+  ensure_prgrm_conf;
+  ensure_systemd_service;
+  enable_and_start_service;
+}
+__main__ $*

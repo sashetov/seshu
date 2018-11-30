@@ -1,0 +1,11 @@
+#!/bin/bash
+function replace_firewalld_with_iptables(){
+  if ! $(yum list installed | grep iptables-services > /dev/null); then {
+    sudo systemctl stop firewalld
+    sudo systemctl mask firewalld
+    sudo yum -y install iptables-services
+    sudo systemctl enable iptables
+    sudo service iptables save
+  }; fi;
+}
+replace_firewalld_with_iptables $*

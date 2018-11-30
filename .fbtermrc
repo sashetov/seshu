@@ -1,0 +1,14 @@
+font-names=mono
+font-size=12
+#font-width=
+#font-height=
+color-foreground=7
+color-background=0
+history-lines=1000
+text-encodings= # run 'iconv --list'
+cursor-shape=0 # cursor shape: 0 = underline, 1 = block
+cursor-interval=500 # cursor flash interval in milliseconds, 0 means disable flashing
+word-chars=._- # additional ascii chars considered as part of a word while auto-selecting text, except ' ', 0-9, a-z, A-Z
+screen-rotate= 0 # available values: 0 = 0 degree, 1 = 90 degrees, 2 = 180 degrees, 3 = 270 degrees
+input-method= # specify the favorite input method program to run
+#ambiguous-wide=yes # treat ambiguous width characters as wide

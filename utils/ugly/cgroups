@@ -1,0 +1,29 @@
+#!/bin/bash
+function cgroups_table(){
+  {
+    while read L; do 
+      export D=$( echo $L | sed -r 's/^[0-9]+\s+//g' | sed -r 's/([0-9]+) /\n\1 /g' | sed -r 's/^[0-9]+\s+//g' | sed -r 's/(devices|cpu( cpuacct)?|pids|blkio|memory|name=\S+ )//g' | grep -v '^-' );
+      echo $D;
+    done< <( while read CG; do
+      echo $( echo $CG | sed -r 's/,/\n/g' | sed -r 's/:/\n/g'  ); 
+    done< <( sudo ps -e amx -o cgroup:100000= --sort cgroup | sort | uniq -c | sort -rn |  head -n 500  ) )
+  } | column --table --table-columns='DEVICES,CPU_CPUACCT,PIDS,BLKIO,MEMORY,NAME_SYSTEMD,0' | less -SRC
+}
+function cgroups_table2(){
+  sudo ps -e amx -o cgroup:100000= --sort cgroup | \
+    sort | \
+    uniq -c | \
+    sort -rn | \
+    head -n 500  | \
+    column --table -s ',' | \
+    sed -r 's/\s+/ /g' | \
+    sed -r 's/^[0-9]+//g' | \
+    column --table -s ':' | \
+    sed -r 's/\s*[0-9]+\s/^/g'| \
+    cat | \
+    grep -vE '^-' | \
+    sed -r 's/^\s*\^\s*//g' | \
+    less -SRC
+}
+cgroups_table;
+cgroups_table2;

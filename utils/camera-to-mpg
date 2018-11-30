@@ -1,0 +1,120 @@
+#!/bin/bash
+function include_common(){
+  SCRIPT_ROOT=$( readlink -f "$0" )
+  SCRIPT_ROOT=$( dirname "$SCRIPT_ROOT" )
+  SCRIPT_ROOT=$( dirname "$SCRIPT_ROOT" );
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib/common.inc.sh";
+  . "$USERBIN_LIB"
+}
+function print_usage(){
+  declare -A RO_DESCR=( );
+  declare -A OO_DESCR=( );
+  declare -A RP_DESCR=( );
+  declare -A OP_DESCR=(
+  [dest_path]="path, defaults to ${DEFAULT_DUMP_PATH}"
+  [filename_no_ext]="filename without the .${DEFAULT_EXT} ext, defaults to '${DEFAULT_FILENAME_PREFIX}'"
+  );
+  for RO in ${!RO_DESCR[*]}; do
+    export TEMPL_USAGE_RO="${TEMPL_USAGE_RO} [%s]";
+  done;
+  for OO in ${!OO_DESCR[*]}; do
+    export TEMPL_USAGE_OO="${TEMPL_USAGE_OO} (%s)";
+  done;
+  export TEMPLATE_USAGE_OPTS="${TEMPL_USAGE_RO}${TEMPL_USAGE_OO}";
+  for RP in ${!RP_DESCR[*]}; do
+    export TEMPL_USAGE_RP="${TEMPL_USAGE_RP} [%s]";
+  done;
+  for OP in ${!OP_DESCR[*]}; do
+    export TEMPL_USAGE_OP="${TEMPL_USAGE_OP} (%s)";
+  done;
+  export TEMPLATE_USAGE_PARAMS="${TEMPL_USAGE_RP}${TEMPL_USAGE_OP}";
+  export TEMPLATE_USAGE="%s${TEMPLATE_USAGE_OPTS}${TEMPLATE_USAGE_PARAMS}\n"
+  export SPACER=' ';
+  note_to_stdout 'USAGE' "$TEMPLATE_USAGE" $SN ${!OP_DESCR[*]} ${!REQ_PARAMS[*]};
+  export MARGIN='       ';
+  export SEP='^';
+  {
+    for RO in ${!RO_DESCR[*]}; do
+      printf "${SEP}%s[%s]${SEP}:=${SEP} %s\n" "$MARGIN" "$RO" "${RO_DESCR[$RO]}";
+    done;
+    for OO in ${!OO_DESCR[*]}; do
+      printf "${SEP}%s(%s)${SEP}:=${SEP} %s\n" "$MARGIN" "$OO" "${OO_DESCR[$OO]}";
+    done;
+    for RP in ${!RP_DESCR[*]}; do
+      printf  "${SEP}%s[%s]${SEP}:${SEP} %s\n""$MARGIN" "$RP" "${RP_DESCR[$RP]}";
+    done;
+    for OP in ${!OP_DESCR[*]}; do
+      printf "${SEP}%s(%s)${SEP}:${SEP} %s\n" "$MARGIN" "$OP" "${OP_DESCR[$OP]}";
+    done;
+  } | column -t -s $SEP
+  note_to_stdout 'NOTE' '\n%s params in "()" are OPTIONAL\n%s params in "[]" are REQUIRED\n' '-' '-';
+}
+function print_help(){
+  if [[ $# -gt 0 ]]; then 
+    err_to_stderr " INVALID INVOCATION:\n $SN $*\n\n";
+    print_usage;
+    exit 2;
+  fi;
+  print_usage;
+}
+function export_cmd_args(){
+  start_xtrace
+  export AFORMAT="pulse";
+  export ACHAN="1";
+  export ASRC_PA=$( get_pa_in_src 0 );
+  export VFORMAT="v4l2";
+  export VFR="30";
+  export VSIZE='640x480';
+  export VCODEC="rawvideo";
+  export VDEV="/dev/video0";
+  export VPIXFMT='yuv420p';
+  export VWINFMT='sdl';
+  export VWINSIZE='160x120';
+  export VWINNAME="camera-preview.${EXT}";
+  export AUDIO_OPTS="-f '${AFORMAT}' -ac '${ACHAN}' -i '${ASRC_PA}'";
+  export VIDEO_OPTS="-f '${VFORMAT}' -framerate '${VFR}' -video_size '${VSIZE}' -i '${VDEV}' -c:v '${VCODEC}' -pix_fmt '${VPIXFMT}'";
+  export PREVIEW_OPTS="-s '${VWINSIZE}' -f '${VWINFMT}' '${VWINNAME}'";
+  export DEST="${DUMP_PATH}/${FILENAME}";
+  stop_xtrace
+}
+function handle_params(){
+  start_xtrace
+  export EXT=$DEFAULT_EXT;
+  export DUMP_PATH=$DEFAULT_DUMP_PATH;
+  case $# in
+    0) print_help && exit 1;
+      ;;
+    1) export FILENAME="${1}.${EXT}";
+      ;;
+    2) export DUMP_PATH=$2;
+       export FILENAME="${1}.${EXT}";
+      ;;
+    *) print_help $*;
+      ;;
+  esac
+  if [ ! -d "$DUMP_PATH" ]; then
+    mkdir -p $DUMP_PATH;
+  fi;
+  export_cmd_args;
+  stop_xtrace
+}
+function record_video() {
+  start_xtrace
+  handle_params $*;
+  export RECORD_CMD="ffmpeg -y ${AUDIO_OPTS} ${VIDEO_OPTS} ${PREVIEW_OPTS} ${DEST} ";
+  padl "${RECORD_CMD}";
+  stop_xtrace
+}
+function __main__() {
+  include_common
+  let DEBUG=0; #DEFAULTS
+  start_xtrace
+  export SN=$( basename $0);
+  export DEFAULT_EXT='mpg';
+  export DEFAULT_DUMP_PATH="/data/videos/webcam/";
+  export DEFAULT_FILENAME_PREFIX="webcam";
+  export DEFAULT_FILENAME="${DEFAULT_FILENAME_PREFIX}.${EXT}";
+  record_video $*;
+  stop_xtrace
+}
+__main__ $*

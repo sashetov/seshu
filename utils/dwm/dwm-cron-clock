@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+function set_clock_time(){
+  . "$HOME/bin/lib/common.inc.sh"
+  export DISPLAY=$(get_display)
+  sudo xhost +
+  xprop -display "$DISPLAY" -root -notype -set WM_NAME "`date +"%a %D %T"`";
+  sudo xhost -
+}
+PID=`pgrep dwm`;
+[[ -z $PID  ]] && echo 'no dwm session present' || set_clock_time

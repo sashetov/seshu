@@ -1,0 +1,2 @@
+#!/bin/bash
+w3m http://alterslash.org/ -dump | iconv -f utf-8 -t ascii//ignore

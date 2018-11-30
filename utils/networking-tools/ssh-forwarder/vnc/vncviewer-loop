@@ -1,0 +1,11 @@
+#!/bin/bash
+function __main__(){
+  export SLEEPTIME=20;
+  export LOCALHOST='127.0.0.1';
+  export VNC_PORT='5900';
+  while : ; do {
+    sleep $SLEEPTIME;
+    vncviewer "${LOCALHOST}:${VNC_PORT}" -Fullscreen
+  }; done;
+}
+__main__ $*

@@ -1,0 +1,9 @@
+#!/bin/bash
+function xrandr_mirror(){
+  export O1='LVDS-1';
+  export O2='VGA-2';
+  export M1='1366x768';
+  export M2='1024x1280+0+0';
+  xrandr --output $O1 --mode $M1 --output $O2 --mode $M2 --same-as $O1
+}
+xrandr_mirror

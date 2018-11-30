@@ -1,0 +1,4 @@
+#!/bin/bash
+export $(dbus-launch)
+export QT_QPA_PLATFORM=wayland
+kwin_wayland --xwayland --exit-with-session=startkde

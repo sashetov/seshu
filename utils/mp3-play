@@ -1,0 +1,223 @@
+#!/bin/bash
+function include_common(){
+  export USERBIN_LIB="${HOME}/bin/lib/common.inc.sh";
+  . "$USERBIN_LIB";
+}
+function print_usage(){
+  export SPACER=' ';
+  export SEP='~';
+  export MARGIN1='       ';
+  export MARGIN2='         ';
+  export RO_NAME="PLAY_ORDER";
+  export RO_LOGIC="n|o|r|s|l";
+  declare -A RO_DESCR=(
+  ['n']="-n"
+  ['o']="-o"
+  ['r']="-r"
+  ['s']="-s"
+  ['l']="-l"
+  );
+  export CD="play audio ordered"
+  declare -A ROF_DESCR=(
+  ['n']="$CD newest to oldest"
+  ['o']="$CD oldest to newest"
+  ['r']="$CD randomly"
+  ['s']="$CD smallest to largest"
+  ['l']="$CD largest to smallest"
+  );
+  export OO_NAME='MISC_OPTS';
+  export OO_LOGIC='h,v,S';
+  declare -A OO_DESCR=(
+  ['h']="-h"
+  ['v']="-v VOLUME"
+  ['S']="-S SPEED"
+  );
+  declare -A OOF_DESCR=( #OO
+  ['h']='prints this usage info'
+  ['v']="play audio with VOLUME in range [0,100]"
+  ['S']="play audio with SPEED( slower(=(0,1); normal=1; fast(=(1,+inf)"
+  );
+  declare -A RP_DESCR=(
+  ['MUSIC_FILES_AND_SEARCH_DIRS']='MFSD0 MFSD1 ... MFSDn'
+  );
+  declare -A RPF_DESCR=(
+  ['MUSIC_FILES_AND_SEARCH_DIRS']="a list of n MFSD's, where MFSDi is a search dir or file and i belongs to range [0,n]"
+  );
+  declare -A OP_DESCR=();
+  declare -A OPF_DESCR=();
+  export T_RO="[";
+  export T_ROF="[";
+  let NXOR=0;
+  while read XOR_ROS; do
+    let NOR=0;
+    if [ $NXOR -gt 0 ]; then 
+      export T_RO="${T_RO},";
+      export T_ROF="${T_ROF},";
+    fi;
+    while read OR_RO; do
+      if [ $NOR -gt 0 ]; then 
+        export T_RO="${T_RO}|";
+        export T_ROF="${T_ROF}|";
+      fi;
+      export T_RO="${T_RO}[${RO_DESCR[$OR_RO]}]";
+      export T_ROF="${T_ROF}[%s]";
+      let NOR++;
+    done< <( echo $XOR_ROS | tr '|' '\n' )
+    let NXOR++;
+  done< <( echo $RO_LOGIC | tr ',' '\n' )
+  export T_RO="${T_RO}]";
+  export T_ROF="${T_ROF}]";
+  export T_OO="(";
+  export T_OOF="(";
+  let NXOR=0;
+  while read OOS_OR; do
+    let NOR=0;
+    if [ $NXOR -gt 0 ]; then 
+      export T_OO="${T_OO},";
+      export T_OOF="${T_OOF},";
+    fi;
+    while read OO_XORS; do
+      if [ $NOR -gt 0 ]; then 
+        export T_OO="${T_OO}|";
+        export T_OOF="${T_OOF}|";
+      fi;
+      export T_OO="${T_OO}(${OO_DESCR[$OO_XORS]})";
+      export T_OOF="${T_OOF}(%s)";
+      let NOR++;
+    done< <( echo $OOS_OR | tr '|' '\n' )
+    let NXOR++;
+  done< <( echo $OO_LOGIC | tr ',' '\n' )
+  export T_OO="${T_OO})";
+  export T_OOF="${T_OOF})";
+  export T_O="${T_RO} ${T_OO}";
+  export T_OF="${T_ROF} ${T_OOF}";
+  export T_RP="";
+  for RP in ${!RP_DESCR[*]}; do
+    export T_RP="${T_RP} [$RP]";
+    export T_RPF="${T_RPF} [${RP_DESCR[$RP]}]";
+  done;
+  for OP in ${!OP_DESCR[*]}; do
+    export T_OP="${T_OP} ($OP)";
+    export T_OPF="${T_OPF} (${OP_DESCR[$OP]})";
+  done;
+  export T_P="${T_RP}${T_OP}";
+  export T_PF="${T_RPF}${T_OPF}";
+  export T="%s [%s] (%s)${T_P}";
+  export TF="%s ${T_O}${T_PF}\n";
+  note_to_stdout 'USAGE' "%s\n" " ";
+  printf "$T\n" "$SN" "${RO_NAME}" "${OO_NAME}";
+  printf "$TF\n" "$SN" ;
+  { # start printing full desriptions for opts and for params
+    printf "${SEP}%s [%s]${SEP}:=${SEP}${T_RO}\n" "$MARGIN1" "${RO_NAME}"
+    for ROF in ${!ROF_DESCR[*]}; do
+      printf "${SEP}%s %s${SEP}:${SEP} %s\n" "$MARGIN2" "${RO_DESCR[$ROF]}" "${ROF_DESCR[$ROF]}";
+    done; 
+  } | column -t -s $SEP
+  {
+    printf "${SEP}%s [%s]${SEP}:=${SEP}${T_OO}\n" "$MARGIN1" "${OO_NAME}" 
+    for OOF in ${!OOF_DESCR[*]}; do
+      printf "${SEP}%s %s${SEP}:${SEP} %s\n" "$MARGIN2" "${OO_DESCR[$OOF]}" "${OOF_DESCR[$OOF]}";
+    done;
+  } | column -t -s $SEP
+  {
+    for RP in ${!RPF_DESCR[*]}; do
+      printf  "${SEP}%s [%s]${SEP}:=${SEP}[%s]\n${SEP}%s %s${SEP}:${SEP}%s\n" "$MARGIN1" "$RP" "${RP_DESCR[$RP]}" "$MARGIN2" "${RP_DESCR[$RP]}" "${RPF_DESCR[$RP]}";
+    done;                                                  
+    for OP in ${!OPF_DESCR[*]}; do                         
+      printf  "${SEP}%s [%s]${SEP}:=${SEP}[%s]\n${SEP}%s %s${SEP}:${SEP}%s\n" "$MARGIN1" "$OP" "${OP_DESCR[$OP]}" "$MARGIN2" "${OP_DESCR[$OP]}" "${OPF_DESCR[$OP]}";
+    done;
+  } | column -t -s $SEP
+  printf "\n";
+  note_to_stdout 'NOTE' "\n" " ";
+  {
+    printf "${SEP}%s${SEP}params in \"()\" are OPTIONAL\n${SEP}%s${SEP}params in \"[]\" are REQUIRED\n${SEP}%s${SEP}inside \"()\" and \"[]\", \"|\" means XOR${SEP}\n${SEP}%s${SEP}inside \"()\" and \"[]\", \",\" means inclusive OR\n" '-' '-' '-' '-';
+  } | column -t -s $SEP;
+}
+function print_help(){
+  export SPACER='';
+  if [[ $# -gt 0 ]]; then 
+    err_to_stderr " Invalid invocation: $SN $*\n\n";
+    print_usage;
+    exit 2;
+  fi;
+  print_usage;
+}
+function play_audio() {
+  start_xtrace;
+  while getopts "v:S:hnorsl" OPT; do #echo OPTIND:$OPTIND OPT:$OPT OPTARG:$OPTARG;
+    case $OPT in
+      n | o | r | s | l) export PLAY_ORDER="${OPT}";
+        ;;
+      v) export VOLUME=${OPTARG};
+        ;;
+      S) export SPEED=${OPTARG};
+        ;;
+      h) export HELP_FLAG="${OPT}"; export OPTIND=$( echo "$OPTIND-1" | bc ); #correct OPTIND due to no args for this opt
+        ;;
+      :) err_to_stderr "  Option -$OPTARG requires an argument.\n"; print_help $*;
+        ;;
+      \?) err_to_stderr " Invalid option: -$OPTARG\n"; print_help $*;
+        ;;
+    esac
+  done
+  declare -a MUSIC_DIRS=( ${@:$OPTIND:99999} );
+  export N=${#MUSIC_DIRS[@]};
+  if [ $N -lt $MINP ] || [ $N -gt $MAXP ]; then 
+    err_to_stderr " Bad number of required params provided:  $N!(=[$MINP,$MAXP]\n";
+    print_help "$*";
+  fi;
+  export MFILES=$( { find $({ for D in ${MUSIC_DIRS[*]}; do echo ${D}; done; } ) -type f | grep -iE "\.(${DEFAULT_EXT})$" | while read T; do printf '%s\n' $T; done; } | tr '\n' ' ');
+  declare -a MUSIC_FILES=( $( echo $MFILES ) );
+  if [ -z $PLAY_ORDER ]; then
+    err_to_stderr " MISSING REQUIRED OPTION [PLAY_ORDER]=[-n|-o|-r|-s|-l]\n";
+    print_help "$*";
+  fi;
+  if [[ $PLAY_ORDER = "r" ]]; then 
+    export MFILES=$( { for T in ${MUSIC_FILES[*]}; do echo $T; done; } | shuf );
+  elif [[ $PLAY_ORDER = "n" ]]; then
+    export MFILES=$( ls -t ${MUSIC_FILES[*]} );
+  elif [[ $PLAY_ORDER = "o" ]]; then
+    export MFILES=$( ls -tr ${MUSIC_FILES[*]} );
+  elif [[ $PLAY_ORDER = "s" ]]; then
+    export MFILES=$( ls -Sr ${MUSIC_FILES[*]} );
+  elif [[ $PLAY_ORDER = "l" ]]; then 
+    export MFILES=$( ls -S ${MUSIC_FILES[*]} );
+  fi;
+  export OPTS="${OPTS} ${DEFAULT_OOPTS}";
+  if [[ $HELP_FLAG = "h" ]]; then
+    print_help;
+    export OPTS="${OPTS} -${HELP_FLAG}";
+  fi;
+  if [ -z $VOLUME ]; then
+    export VOLUME=${DEFAULT_VOLUME};
+  fi;
+  export OPTS="${OPTS} -volume ${VOLUME}";
+  if [ -z $SPEED ]; then
+    export SPEED=${DEFAULT_SPEED};
+  fi;
+  export OPTS="${OPTS} -speed ${SPEED}";
+  export PCMD="${PLAYER} ${OPTS} ${MFILES} ";
+  #user_jrnl_tail "$SN";
+  echo $PCMD
+  exec $PCMD
+  #kill "$UJRNLT_PID";
+  stop_xtrace
+}
+function __main__() {
+  include_common
+  let DEBUG=0; #defaults
+  start_xtrace
+  export SN=$( basename $0 );
+  export MINP=1;
+  export MAXP=10000;
+  export DEFAULT_VOLUME='70';
+  export DEFAULT_SPEED='1.00';
+  export DEFAULT_OOPTS="-fs -osdlevel 3 -loop 0 -vo null";
+  export DEFAULT_EXT='mp3|ogg|flac';
+  export PLAYER='/usr/bin/mplayer';
+  export MAIN_PID="${BASHPID}";
+  export MAIN_PPID="$(print_ppid $MAIN_PID)"
+  play_audio $*;
+  stop_xtrace
+}
+__main__ "$*"

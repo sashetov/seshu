@@ -1,0 +1,2 @@
+#!/bin/bash
+dumpkeys | sed s/CtrlL_Lock/Caps_Lock/ | loadkeys

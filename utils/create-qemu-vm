@@ -1,0 +1,9 @@
+#!/bin/bash
+qemuDir='/home/sasheto/qemu';
+qcowFile='centos7.qcow';
+diskSize='25G';
+installISO='/home/sasheto/Downloads/CentOS-7-x86_64-NetInstall-1503.iso';
+memoryInMB='2048';
+sudo qemu-img create "$qemuDir/${qcowFile}" "${diskSize}"
+sudo qemu-system-x86_64 -boot d -cdrom "${installISO}" -hda "${qcowFile}" -net nic -net user -m "${memoryInMB}" -localtime  -vga qxl
+#qemu-system-x86_64 "${qcowFile}" -boot c -net nic -net user -m ${memoryInMB} -localtime

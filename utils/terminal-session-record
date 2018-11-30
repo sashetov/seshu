@@ -1,0 +1,98 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  . "$HOME/bin/lib/common.inc.sh";
+}
+function print_usage(){
+  export SPACER=' ';
+  export SEP='~';
+  export MARGIN1='       ';
+  export MARGIN2='         ';
+  declare -A RP_DESCR=( ['RECORDING_NAME']='rn');
+  declare -A RPF_DESCR=( ['RECORDING_NAME']='the name for the terminal session');
+  let NXOR=0;
+  export T_RP="";
+  for RP in ${!RP_DESCR[*]}; do
+    export T_RP="${T_RP} [$RP]";
+    export T_RPF="${T_RPF} [${RP_DESCR[$RP]}]";
+  done;
+  export T_P="${T_RP}";
+  export T_PF="${T_RPF}";
+  export T="%s ${T_P}";
+  export TF="%s ${T_PF}\n";
+  note_to_stdout 'USAGE' "%s\n" " ";
+  printf "$T\n" "$SN" ;
+  printf "$TF\n" "$SN" ;
+  {
+    for RP in ${!RPF_DESCR[*]}; do
+      printf  "${SEP}%s [%s]${SEP}:=${SEP}[%s]\n${SEP}%s %s${SEP}:${SEP}%s\n" "$MARGIN1" "$RP" "${RP_DESCR[$RP]}" "$MARGIN2" "${RP_DESCR[$RP]}" "${RPF_DESCR[$RP]}";
+    done;                                                  
+  } | column -t -s $SEP
+  printf "\n";
+  note_to_stdout 'NOTE' "\n" " ";
+  printf "${SEP}%s${SEP}params in \"[]\" are REQUIRED\n" '-' | column -t -s $SEP;
+}
+function print_help(){
+  export ES=255;
+  if [[ $# -gt 0 ]]; then 
+    errmsg_usage_exit "$ES" " Invalid invocation: %s\n" "$INVOKED_WITH";
+  else 
+    print_usage; 
+  fi;
+}
+function errmsg_usage_exit(){
+  export ERR_STATUS=$1;
+  if [[ $ERR_STATUS -eq 0 ]]; then
+    note_to_stdout "HELP" "\n%s\n" $2;
+  else 
+    err_to_stderr "$2" "${@:3:$MAXARGC}";
+  fi;
+  print_usage;
+  exit ${ERR_STATUS};
+}
+function handle_params(){
+  start_xtrace
+  declare -a PARAMS=( ${@:$OPTIND:$MAXARGC} );
+  export N=${#PARAMS[@]};
+  export ERRM="NUMBER OF ARGUMENTS PROVIDED IS NOT IN REQUIRED RANGE:\n${N}!(=[$MINP,$MAXP]\n";
+  if [ $N -lt $MINP ] || [ $N -gt $MAXP ]; then 
+    errmsg_usage_exit 5 "${ERRM}"; 
+  fi;
+  export PARAMS_OK=1;
+  stop_xtrace
+}
+function record_term_sess(){
+  start_xtrace
+  [ -z $PARAMS_OK ] && handle_params $*;
+  export DDIR="/data/asciicasts/";
+  export DD_FRW="$DDIR/review/"
+  export EXT_A="json"
+  export EXT_T='ss'
+  export EXT_TT='st'
+  export TS=`datets_print`
+  export NAME="$1-$TS";
+  export DD_A="${DD_FRW}/asciinema";
+  export DD_TS="${DD_FRW}/typescript";
+  for D in "$DD_A" "$DD_TS" "$DD_FRW"; do
+    mkdir -p $D && ok_to_stdout " Created %s\n" "$D" || { err_to_stderr "failed at creating $D\n" && exit 1; }
+  done;
+  export NAME_TS="${DD_TS}/${NAME}.${EXT_T}";
+  export NAME_TT="${DD_TS}/${NAME}.${EXT_TT}";
+  export NAME_A="${DD_A}/${NAME}.${EXT_A}";
+  note_to_stdout "NOTE" "\nasciinema recording: ${NAME_A}\ntypescript timing: ${NAME_TT}\ntypescript data: ${NAME_TS}\n" " " | tee | logger -i -t $SN
+  export CMD="script -f -a '${NAME_TS}' --timing='${NAME_TT}' -e -c '${ORIG_ARGS[*]:2:$MAXARGC}'"
+  echo $CMD && eval $CMD
+  stop_xtrace
+}
+function __main__(){
+  include_common;
+  let DEBUG=0; #defaults
+  start_xtrace
+  export MINP=1;
+  export MAXP=1000;
+  export SN=$( basename $0 );
+  declare -a ORIG_ARGS=( ${@:0:$MAXARGC} );
+  export INVOKED_WITH="${SN} ${ORIG_ARGS[*]}";
+  record_term_sess ${ORIG_ARGS[*]:1:$MAXARGC};
+  stop_xtrace
+}
+__main__ $*

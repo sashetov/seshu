@@ -1,0 +1,3 @@
+#!/bin/bash
+/usr/bin/setxkbmap -model pc105 -layout us,bg -variant ,phonetic -option grp_led:scroll
+xkb-switch -n

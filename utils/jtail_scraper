@@ -1,0 +1,32 @@
+#!/bin/bash
+function include_common(){
+  export LIB_DIR="$HOME/bin/lib/";
+  . ${LIB_DIR}/common.inc.sh
+}
+function j_filter(){
+  start_xtrace
+  check_num_params $# 2 2;
+  export TAG=$1; export RE=$2; 
+  if [ $TAG == "_NO_TAG_" ]; then 
+    journalctl -n $MAX_LINES -f --user -o cat | grep -E "$RE" #dont use tag if none present
+  else
+    journalctl -n $MAX_LINES -f --user -t $TAG -o cat | grep -E "$RE"
+  fi;
+  stop_xtrace;
+}
+function __main__(){
+  include_common 
+  let DEBUG=1; export MAX_LINES=10000; export SCRAPER=''; export T=$1;
+  start_xtrace
+  case $T in
+    mp3-play) export SCRAPER='^(Playing)'; ;;
+    *) export SCRAPER='.?';  ;;
+  esac;
+  if [ -z $T ]; then
+    j_filter '_NO_TAG_' $SCRAPER;
+  else
+    j_filter $T $SCRAPER;
+  fi;
+  stop_xtrace;
+}
+__main__ $*

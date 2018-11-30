@@ -1,0 +1,64 @@
+#!/bin/bash
+TMPFILE="mktemp";
+function usage_and_exit() {
+  ERR_MSG="${*}"
+  if [[ -z $STATUS ]]; then 
+    STATUS=1
+  fi;
+  echo -e "`date`:\n  $0 $@ \n\n";
+  echo -e "ERROR: $ERR_MSG" 1>&2;
+  echo -e "\nUsage:\n\n$0 MAX_WORDS_PER_RUN PER_WORD_TIMEOUT (DOWNLOAD_FILE)\n"
+  exit 1;
+}
+function check_args {
+  MINARGC=2;
+  ARGC=${#*}
+  if [[ $ARGC -lt 2 ]]; then
+    usage_and_exit "min argc is $MINARGC, $ARGC given"
+  fi;
+  let MAXWORDS=$1;
+  let PER_WORD_TIMEOUT=$2
+  WORDSFILE=$3;
+  if [ -z $WORDSFILE ]; then
+    WORDSFILE='/dev/stdout';
+  fi;
+  return 0;
+}
+function get_words {
+  URL='http://www.bgjargon.com/word/random/';
+  check_args $*
+  let i=0;
+  while : ; do {
+    if (( $i < $MAXWORDS )); then {
+      unset start_line;
+      unset total_lines;
+      unset word;
+      unset descr;
+      sleep $PER_WORD_TIMEOUT; { 
+        wget "${URL}" -O $TMPFILE && {
+          let total_lines=$(( `wc -l $TMPFILE| cut -f 1 -d ' '` + 1));
+          let start_line=`\
+            grep -n "<div class=\"meaning\">" $TMPFILE | \
+            cut -f 1 -d ':' `;
+          word=` \
+            tail -n $(( $total_lines - $start_line )) $TMPFILE| \
+            grep "<h3>" | \
+            head -n 1 | \
+            sed -r 's/<h3>[ \t]?(.+)[ \t]?<\/h3>/\1/g'\
+          `; 
+          word=$(echo $word)
+          echo -e "${word}";
+          #: ${descr}";
+        };
+        rm -f $TMPFILE;
+      } 2>/dev/null >> $WORDSFILE;
+      let i++;
+      echo "($i/$MAXWORDS): '$word'" 1>&2;
+    }; else
+      break;
+    fi;
+  }; done;
+  echo -e "`date`: $i jargoncheta v:\n${WORDSFILE}" 1>&2;
+}
+get_words $*
+rm -f $TMPFILE

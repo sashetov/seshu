@@ -1,0 +1,9 @@
+#!/bin/bash
+function __main__(){
+  export URL_PREFIX='http://www.google.com/search?hl=en-us&q='
+  export SCRIPT_ROOT=$( dirname "$( dirname $(readlink -f $0) ) ");
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib";
+  . $USERBIN_LIB/common.inc.sh
+  search_with_qs $*
+}
+__main__ $*

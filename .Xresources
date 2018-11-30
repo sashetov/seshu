@@ -1,0 +1,25 @@
+xterm*faceSize1:          10
+xterm*faceSize2:          11
+xterm*faceSize3:          12
+xterm*faceSize4:          13
+xterm*faceSize5:          14
+xterm*background:         #000000
+xterm*foreground:         #ffffff
+XTerm*renderFont:         false
+XTerm*faceName:           VeraMono
+XTerm*faceSize:           10
+xterm*saveLines:          1409600
+xterm*scrollBar:          false
+xterm*scrollTtyOutput:    true
+xterm*selectToClipboard:  true
+URxvt*scrollTtyOutput: false
+URxvt*scrollWithBuffer: true
+URxvt*scrollTtyKeypress: true
+URxvt.color0: rgb:0/0/0
+URxvt.perl-ext-common: ...,tabbed,...
+xterm*VT100.Translations: #override \
+Ctrl Shift <Key>V:    insert-selection(SELECT) \n\
+Ctrl Shift <Key>C:    copy-selection(SELECT) \n\
+Ctrl <Key> plus: larger-vt-font() \n\
+Ctrl <Key> minus: smaller-vt-font() \n\
+Ctrl <Key> 0: set-vt-font(d) \n

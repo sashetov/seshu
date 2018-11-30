@@ -1,0 +1,17 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  SCRIPT_ROOT=$( dirname $( dirname $(readlink -f "$0") ) );
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib/common.inc.sh";
+  . "$USERBIN_LIB"
+}
+function gvim_launcher() {
+  /usr/bin/bash -l -c "nohup gvim $*"
+}
+function __main__() {
+  include_common
+  let DEBUG=0;
+  start_xtrace
+  gvim_launcher $*
+  stop_xtrace
+}
+__main__ $*

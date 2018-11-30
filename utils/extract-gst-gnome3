@@ -1,0 +1,12 @@
+#!/bin/bash
+function __main__(){
+  export WORKDIR=${HOME}/shell-theme
+  export GST='/usr/share/gnome-shell/gnome-shell-theme.gresource';
+  if [ ! -d ${WORKDIR}/theme ]; then
+    mkdir -p ${WORKDIR}/theme;
+  fi
+  for R in $(gresource list $GST); do
+    gresource extract $GST $R >$WORKDIR/${R#\/org\/gnome\/shell/};
+  done
+}
+__main__ $*

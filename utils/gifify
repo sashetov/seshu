@@ -1,0 +1,31 @@
+#!/bin/bash
+function include_common(){
+  export COMMON_INC="$HOME/bin/lib/common.inc.sh";
+  . "$COMMON_INC"
+}
+function gifify_dir(){
+  start_xtrace
+  check_num_params $# 1 $MAXARGC
+  export SDIR=$1
+  export DELAY_MS=20;
+  export LOOP_N=0;
+  export GIF="${SDIR}/mf-${TS}.${OEXT}"
+  export LIST=$( eval "ls -tr ${SDIR}/*.{${IEXT}}" );
+  export LIST_SHUFFLED=$(  echo $LIST | tr ' ' '\n' | shuf | tr '\n' ' ');
+  rm -f ${SDIR}/*.${OEXT};
+  export CMD="convert -delay ${DELAY_MS} -loop ${LOOP_N} ${LIST} ${GIF} ";
+  padl $CMD;
+  stop_xtrace
+}
+function __main__( ){
+  include_common
+  let DEBUG=0; #DEFAULTS
+  start_xtrace
+  export SN=$( basename $0 )
+  export TS=$( datets_print );
+  export IEXT='jpeg,jpg,png';
+  export OEXT='gif';
+  gifify_dir $*
+  stop_xtrace
+}
+__main__ $*;

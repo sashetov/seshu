@@ -1,0 +1,9 @@
+#!/bin/bash
+export RTUNNEL_LOCALPORT='2220';
+export REMOTE_AUTOLOGIN_USER="sasheto";
+export LOCALHOST="127.0.0.1";
+function restart_remote_computer {
+  ssh -p "${RTUNNEL_LOCALPORT}" "${REMOTE_AUTOLOGIN_USER}@${LOCALHOST}" "sudo reboot -f now";
+}
+echo "1. RESTARTING REMOTE COMPUTER - CHECK BACK IN 5 MINUTES";
+restart_remote_computer

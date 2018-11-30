@@ -1,0 +1,7 @@
+identity alexander.vassilevski@gmail.com
+  hostname smtp.gmail.com:587
+  username "alexander.vassilevski@gmail.com"
+  password ""
+  starttls required
+
+mda "/usr/bin/procmail -d %T"

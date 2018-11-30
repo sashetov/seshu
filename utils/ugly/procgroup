@@ -1,0 +1,59 @@
+#!/bin/bash
+function include_common(){
+  . $HOME/bin/lib/common.inc.sh
+}
+function proc_table(){
+  start_xtrace
+  export FMT_STRING=$1
+  export PS_CMD="sudo ps -e --format='${FMT_STRING}'";
+  echo $PS_CMD 1>&2
+  eval $PS_CMD
+  stop_xtrace
+}
+function get_uniq_ids(){ # DISCTINCT/UNIQUE...
+  start_xtrace
+  sort -nr | uniq -c | sort -rn | awk '{ print $2; }'
+  stop_xtrace
+}
+function init_filters(){ #WHERE pid=PROC_PID OR ppid=PROC_PID OR pid=PROC_PPID OR ppid=PROC_PPID;
+  start_xtrace
+  export PID_FILTER='^[0-9]+\s+(%s|%s)';
+  export PPID_FILTER='^(%s|%s)'
+  export PF=$(  printf $PID_FILTER'\n'  "$PROC_PID" "$PROC_PPID" );
+  export PPF=$( printf $PPID_FILTER'\n' "$PROC_PID" "$PROC_PPID" );
+  stop_xtrace
+}
+function select_pgids() { #SELECT pgid FROM proc_stats 
+  start_xtrace
+  export CN='3';
+  while read ROW; do :
+    echo $ROW | grep -E $PF  | awk '{ print $'$CN'; }';
+    echo $ROW | grep -E $PPF | awk '{ print $'$CN'; }';
+  done;
+  stop_xtrace
+}
+function get_proc_pgid(){
+  start_xtrace
+  init_filters
+  export PROC_PGIDS=$( proc_table $COLS_PROC_IDS | select_pgids | get_uniq_ids );
+  stop_xtrace
+}
+function __main__() {
+  include_common;
+  let DEBUG=0;
+  start_xtrace
+  export PROC_PID=${BASHPID};
+  export PROC_PPID="$( print_ppid ${PROC_PID} )";
+  export COLS_PROC_IDS='ppid=,pid=,pgid=';
+  export COLS_THREADS='tid=,tgid=';
+  export COLS_PROC_FULLER="${COLS_PROC_IDS},tty=,${COLS_THREADS},comm=";
+  get_proc_pgid;
+  echo $PROC_PGIDS;
+  export PGID_FILTER='^([0-9]+\s+){2}(%s)';
+  export PGIDS=$( echo $PROC_PGIDS | sed -r 's/\s+/\|/g' );
+  export PGP=$( printf $PGID_FILTER'\n' "$PGIDS" );
+  echo $PGP
+  proc_table "$COLS_PROC_FULLER" | grep --color=always -E $PGP;
+  stop_xtrace
+}
+__main__ $*

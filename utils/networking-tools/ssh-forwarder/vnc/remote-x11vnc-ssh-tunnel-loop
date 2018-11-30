@@ -1,0 +1,41 @@
+#!/bin/bash
+export DEBUG=''
+export COMMON_INCLUDE="$HOME/bin/lib/common.inc.sh"
+. ${COMMON_INCLUDE}
+export REMOTE_DISPLAY=$1;
+export SSH_PORT=22
+export LOCALHOST='127.0.0.1'
+export NAT_LOOPBACK_IP='127.0.0.2'
+export REMOTE_HOSTNAME='sashetov.paragonbg'
+export REMOTE_AUTOLOGIN_USER="sasheto";
+export VNC_PORT='5900';
+export SLEEPTIME=60;
+export ERR_PREFIX='';
+function __main__() {
+  if ! is_numeric $REMOTE_DISPLAY; then #chck the remote display param
+    export REMOTE_DISPLAY='0';
+    export ERR_PREFIX='NOTICE:\n';
+    exit_with_msg 0 "ARG0 ( REMOTE_DISPLAY ) has to be a numeric value corresponding to the X11 DISPLAY number on the remote host.\nGuessing with default value 0..\n\tREMOTE_DISPLAY=0\n";
+  fi;
+  if ! [[ $( ip a | grep -i "${NAT_LOOPBACK_IP}" | wc -l ) -eq 1 ]]; then # check the ip
+    sudo ip addr add $NAT_LOOPBACK_IP dev lo || export ERR_PREFIX="ERROR:\n";
+    exit_with_msg 1 "could not\nsudo ip addr add $NAT_LOOPBACK_IP dev lo";
+  fi;
+  exec 6<>/dev/tcp/"${NAT_LOOPBACK_IP}"/"$SSH_PORT" || {
+    export ERR_PREFIX='ERROR: no SSH connection:\n';
+    exit_with_msg 2 " on /dev/tcp/${NAT_LOOPBACK_IP}:${SSH_PORT}\nCheck iptables or restart remote forwarding and retry.";
+  }
+  if [[ -n $DEBUG && $DEBUG -eq '0' ]]; then
+    printf 'ssh -t -L "%s:%s:%s" "%s@$%s" "killall -9 x11vnc; x11vnc -display :%s";\n'\
+      "${VNC_PORT}" "${LOCALHOST}" "${VNC_PORT}" \
+      "$REMOTE_AUTOLOGIN_USER" "${NAT_LOOPBACK_IP}"\
+      "$REMOTE_DISPLAY";
+  fi;
+  while : ; do {
+    sleep $SLEEPTIME;
+    ssh -t -L "${VNC_PORT}:${LOCALHOST}:${VNC_PORT}"\
+      "$REMOTE_AUTOLOGIN_USER@${NAT_LOOPBACK_IP}"\
+      "killall -9 x11vnc; x11vnc -display :$REMOTE_DISPLAY";
+  }; done;
+}
+__main__ $*

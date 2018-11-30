@@ -1,0 +1,16 @@
+#!/bin/bash
+function ssh_tunnel_two_hops(){
+  export HOST0_LOCALPORT='2220'; # first hop
+  export HOST0_REMOTEPORT='2220';
+  export HOST1='vassilevski.com'; #second hop
+  export HOST1_LOCALPORT="$HOST0_REMOTEPORT";
+  export HOST1_REMOTEPORT="7777";
+  export HOST2='94.26.13.180';
+  ssh "root@$HOST1" -L "$HOST0_LOCALPORT:localhost:$HOST0_REMOTEPORT" -t \
+    ssh "root@$HOST2" -p "$HOST1_REMOTEPORT" \
+    -R "localhost:$HOST1_LOCALPORT:$HOST2:$HOST1_REMOTEPORT";
+}
+function __main__() {
+  ssh_tunnel_two_hops $*
+}
+__main__ $*

@@ -1,0 +1,18 @@
+#!/bin/bash
+slstatus_running(){
+  start_xtrace
+  sudo pgrep slstatus | wc -l
+  stop_xtrace
+}
+function slstatus_check_and_run(){
+  . $HOME/bin/lib/common.inc.sh
+  start_xtrace
+  export DISPLAY=$(get_display);
+  if [ $(slstatus_running) -eq 0 ] && [ -n ${DISPLAY} ]; then 
+    slstatus -d
+  else
+    exit 0
+  fi;
+  stop_xtrace
+}
+slstatus_check_and_run

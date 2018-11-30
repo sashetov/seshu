@@ -1,0 +1,13 @@
+#!/bin/bash
+function __main__(){
+  export URL_PREFIX='https://en.wikipedia.org/wiki/Special:Search/'
+  export SCRIPT_ROOT=$( dirname "$( dirname $(readlink -f $0) ) ");
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib";
+  . $USERBIN_LIB/common.inc.sh
+  start_xtrace
+  export QS=`print_qs $*`;
+  export URL="${URL_PREFIX}${QS}"
+  echo $URL
+  stop_xtrace
+}
+__main__ $*

@@ -1,0 +1,8 @@
+#!/bin/bash
+function __main__(){
+  export SPEAKER_ID='01:12:23:34:45:26';
+  bluetoothctl pair  $SPEAKER_ID &
+  bluetoothctl connect $SPEAKER_ID &
+  gnome-control-center sound outputs 
+}
+_main__ $*

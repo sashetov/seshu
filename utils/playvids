@@ -1,0 +1,165 @@
+#!/bin/bash
+function include_common(){
+  . "${HOME}/bin/lib/common.inc.sh";
+}
+function print_help(){
+  start_xtrace
+  export SN=$( basename $0 )
+  export SPACER="";
+  if [[ $# -gt 0 ]]; then 
+    printf 'INVALID INVOCATION:\n'
+    printf '%s %s\n\n' $SN  "$*";
+  fi;
+  note_to_stdout 'USAGE' '%s ( OPTIONAL_OPT ) [ ORDERING_OPT ] [ PATHS_OPTS ]\n' "$SN";
+  note_to_stdout 'USAGE' '%s ( -h | -v VOLUME | -s SPEED | -f | -L LOOP_N ) [ -n | -o | -s | -l | -r] [-p VP0 (-p VP2) ... (-p VPn)]\n\n' "$SN";
+  printf '    (OPTIONAL_OPT) =: ( -h | -v VOLUME | -s SPEED | -f | -L LOOP_N )\n'
+  printf '      -h          print this help message\n';
+  printf '      -v VOLUME   play vids with VOLUME volume\n';
+  printf '      -S SPEED    play vids with SPEED speed(0.15-4.35)\n';
+  printf '      -f          play vids using frame buffer device\n'
+  printf '      -L LOOP_N   loop all vids LOOP_N times\n\n'
+  printf '    [ORDERING_OPT] =: [ -n | -o | -s | -l | -r]\n';
+  printf '      -n          play vids in order "newest to oldest"\n';
+  printf '      -o          play vids in order "oldest to newest"\n';
+  printf '      -s          play vids in order "smallest to largest"\n';
+  printf '      -l          play vids in order "largest to smallest"\n';
+  printf '      -r          play vids in order "shuffled"\n\n';
+  printf '    [PATHS_OPTS]= [-p VP1 (-p VP2) ... (-p VPn)]\n';
+  printf '      -p VPi: VP is the path to search for videos in. Must be provided at least once\n\n';
+  note_to_stdout 'NOTE' '%s options in "()" are OPTIONAL\n %s options in "[]" are REQUIRED\n %s inside "()" and "[]", "|" means exclusive or\n\n' '-' '-' '-';
+  note_to_stdout 'EXAMPLE' '%s -r -v100 -S1.4 -L0 -p"/data/videos/" - loops forever through a shuffled set of all the videos in "/data/videos/", playing at 1.4x speed, at 100%% volume\n' $SN
+  stop_xtrace
+}
+function get_opts(){
+  start_xtrace
+  while getopts "norslfhv:S:L:p::" OPT; do
+    export OPTA=$( echo "${OPTARG}" | awk '{ print $1; }' );
+    case $OPT in
+      n | o | r | s | l) export REQ_FLAG=$OPT; continue;
+        ;;
+      v) export VOLUME=$OPTARG; continue;
+        ;;
+      S) export SPEED=$OPTARG; continue;
+        ;;
+      L) export LOOP_N=$OPTA; continue;
+        ;;
+      p) export VIDS_DIRS="$VIDS_DIRS ${OPTA}"; continue;
+        ;;
+      f) export PTYPE='FB'; continue;
+        ;;
+      h) export HELP_FLAG=$OPT; continue;
+        ;;
+      :) err_to_stderr " Option -$OPTARG requires an argument."; print_help "$*";
+        ;;
+      \?) err_to_stderr " Invalid option: -$OPTARG"; print_help "$*";
+        ;;
+      *) print_help "$*";
+        ;;
+    esac
+  done
+  stop_xtrace
+}
+function handle_help_opt(){
+  start_xtrace
+  [[ $HELP_FLAG = "h" ]] && print_help && exit 0;
+  stop_xtrace
+}
+function handle_optional_all(){
+  start_xtrace
+  [[ $PTYPE == "X11" ]] && export DISP_OPTS="${X11_OPTS}" || export DISP_OPTS="${FB_OPTS}";
+  export SPEED_OPT="-speed ${SPEED}";
+  export VOLUME_OPT="-volume ${VOLUME}";
+  export LOOP_OPT="-loop ${LOOP_N}";
+  export OPTS="${MISC_OPTS} ${SLOW_OPTS} ${VOLUME_OPT} ${SPEED_OPT} ${LOOP_OPT} ${DISP_OPTS}";
+  stop_xtrace
+}
+function handle_required_opt(){
+  start_xtrace
+  [ -z $REQ_FLAG ] && err_to_stderr "  Missing required option.\n" && print_help "$*"
+  stop_xtrace
+}
+function order_vids_rand(){
+  start_xtrace
+  {
+    for VID in $VIDS; do
+      echo $VID;
+    done;
+  } | shuf | tr '\n' ' ';
+  stop_xtrace
+}
+function order_vids_ntoo(){
+  start_xtrace
+  ls -t $VIDS | tr '\n' ' ';
+  stop_xtrace
+}
+function order_vids_oton(){
+  start_xtrace
+  ls -tr $VIDS | tr '\n' ' ';
+  stop_xtrace
+}
+function order_sl_common(){
+  start_xtrace
+  for V in $VIDS; do 
+    export S=$( ffprobe -v 'error' -show_entries 'format=duration' -of 'default=noprint_wrappers=1:nokey=1' $V );
+    export SR=$( python -c 'print(round('$S'))' );
+    printf '%s %s\n' $SR $V;
+  done;
+  stop_xtrace
+}
+function order_vids_stol(){
+  start_xtrace
+  order_sl_common | sort -n | awk '{ print $2; }'  | tr '\n' ' ' 
+  stop_xtrace
+}
+function order_vids_ltos(){
+  start_xtrace
+  order_sl_common | sort -nr | awk '{ print $2; }'  | tr '\n' ' ' 
+  stop_xtrace
+}
+function handle_required_all() {
+  start_xtrace
+  if handle_required_opt $*; then
+    export VIDS=$( find ${VIDS_DIRS} -type f | grep -iE '\.[^\.]+$' | grep -vE 'srt$' ) ;
+    echo VIDS:$VIDS;
+  fi
+  case $REQ_FLAG in
+    r) export ARGS=$( order_vids_rand ); ;;
+    n) export ARGS=$( order_vids_ntoo ); ;;
+    o) export ARGS=$( order_vids_oton ); ;;
+    s) export ARGS=$( order_vids_stol ); ;;
+    l) export ARGS=$( order_vids_ltos ); ;;
+  esac
+  stop_xtrace
+}
+function handle_opts_args_and_run_cmd(){
+  start_xtrace
+  handle_help_opt;
+  handle_required_all $*;
+  handle_optional_all;
+  export CMD="${BINARY} ${OPTS} ${ARGS}";
+  padl $CMD;
+  stop_xtrace
+}
+function play_vids() {
+  start_xtrace
+  export BINARY='/usr/bin/mplayer';
+  export MISC_OPTS=" -utf8 -osdlevel 3 ";
+  export X11_OPTS=" ";
+  export FB_OPTS=" -nolirc -vo fbdev2:/dev/fb0 -vf scale=1280:1024 ";
+  get_opts $*;
+  handle_opts_args_and_run_cmd $*;
+  stop_xtrace
+}
+function __main__() {
+  include_common
+  let DEBUG=0; #defaults
+  start_xtrace
+  export PTYPE='X11';
+  export SLOW_OPTS=" -cache 8200 -framedrop ";
+  export VOLUME='20';
+  export SPEED='1.0';
+  export LOOP_N='0';
+  play_vids $*
+  stop_xtrace
+}
+__main__ $*

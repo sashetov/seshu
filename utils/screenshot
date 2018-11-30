@@ -1,0 +1,3 @@
+#!/bin/bash
+export C='scrot -q 100 "$@" /srv/data/pics/screenshots/%s_$wx$h.png'
+echo $C && eval $C

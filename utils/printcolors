@@ -1,0 +1,21 @@
+#!/bin/bash
+function __main__(){
+  let i=0
+  echo -ne "PRINTCOLORS\n Legend: \n"
+  for ATTR in  1 2 4 5 7 ; do
+    for FG in {30..37} ; do
+      for BG in {40..47}  ; do
+        EOL='';
+        T='';
+        MOD=`echo "$i%8" | bc`;
+        if [ $MOD -eq 7 ]; then 
+          EOL='\n';
+        fi;
+        echo -en "\e[${ATTR};${BG};${FG}m\\\e[$ATTR;$BG;$FG\\\e[m\e[m$EOL$T";
+        let i++;
+      done;
+    done;
+  done;
+  echo ""
+}
+__main__ $*

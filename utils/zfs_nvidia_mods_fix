@@ -1,0 +1,109 @@
+#!/bin/bash
+function shu_init(){
+  export SHUTILS_DIR="$HOME/bin";
+  export INIT_SHUTILS="$SHUTILS_DIR/p.sh";
+  . $INIT_SHUTILS || echo ERR_SHUTILS_INCLUDE >&2 | tee | logger -i -t shu_init;
+}
+function get_zver() {
+  echo $(rpm -q zfs | sed -r 's/^zfs-([0-9.]+).+$/\1/g' | grep -v zfs )
+}
+function get_kver() {
+  echo $(rpm -q --last kernel|head -n1 | sed -r 's/kernel-([^ ]+) .+/\1/g')
+}
+function get_nver() {
+  echo 390.25
+  #echo $(rpm -q nvidia-driver-devel  | sed -r 's/[^0-9.]+//g' | sed -r 's/^([0-9]+[.][0-9]+).+/\1/g')
+}
+function dkms_install_modules(){
+  echo sudo dkms install -m zfs -v $ZV -k $KV;
+  sudo dkms install -m zfs -v $ZV -k $KV;
+  echo sudo dkms install -m spl -v $ZV -k $KV;
+  sudo dkms install -m spl -v $ZV -k $KV;
+  echo sudo dkms install -m nvidia -v $NV -k $KV;
+  sudo dkms install -m nvidia -v $NV -k $KV;
+}
+function redo_initramfs_vmlinux() {
+  sudo sh -x $DR -fv --kver $KV
+}
+function efi_mount_check(){
+  export LB=$(sudo mount  | grep -E '\/boot\/efi' | wc -l)
+  [[ $LB -eq 0 ]] && return 1 || return 0;
+}
+function redo_grub(){
+  efi_mount_check || sudo mount $ED;
+  sudo grub2-mkconfig -o "$GC";
+  sudo grubby --set-default-index 0
+}
+function initramfs_check(){
+  export S=0
+  for MN in nvidia-drm nvidia nvidia-modeset nvidia-uvm; do 
+    export N=$(sudo lsinitrd -k $KV | grep -E "$MN.ko.xz" | wc -l);
+    if [ $N -eq 0 ]; then 
+      echo $MN:$N;
+      export S=1;
+      break;
+    else
+      continue;
+    fi;
+  done;
+  return $S;
+}
+function are_modules_built(){
+  for MN in zfs spl nvidia; do 
+    export MP=/usr/lib/modules/$KV/extra/$MN.ko.xz;
+    if [ -f $MP ]; then 
+      continue;
+    else echo $MP missing && return 1
+    fi;
+  done;
+  return 0;
+}
+function test_efi(){
+  if  ! efi_mount_check ; then 
+    echo_failure "efi not mounted\n";
+    return 1;
+  fi;
+  echo_success "efi mounted\n";
+}
+function test_modules_built(){
+  if ! are_modules_built; then
+    echo_failure "modules not ok, running dkms install for each:\n";
+    dkms_install_modules;
+  fi;
+  echo_success "modules are built+installed ok\n";
+}
+function test_initramfs(){
+  while ! initramfs_check; do
+    echo_failure "initramfs mods not ok, running dracut again:\n";
+    redo_initramfs_vmlinux;
+  done;
+  echo_success "kernel+initramfs mods ok\n";
+}
+function test_grub(){
+  export NL=$( sudo grep -E "$KV" "$GC" | wc -l )
+  if [[ $NL -eq 0 ]]; then 
+    echo_failure "grub config does not contain new kernel version, redoing:\n";
+    redo_grub;
+  fi;
+  echo_success "grub config is ok;\n";
+}
+function test_suite(){
+  test_efi;
+  test_modules_built;
+  test_initramfs;
+  test_grub;
+}
+
+function __main__(){
+  shu_init
+  set -x
+  export DR="/usr/bin/dracut";
+  export ED="/boot/efi/";
+  export GC='/boot/efi/EFI/fedora/grub.cfg';
+  export ZV=$(get_zver);
+  export NV=$(get_nver);
+  export KV=$(get_kver);
+  set +x
+  test_suite
+}
+__main__ $*

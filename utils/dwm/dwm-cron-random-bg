@@ -1,0 +1,150 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  . "$HOME/bin/lib/common.inc.sh";
+}
+function print_usage(){
+  note_to_stdout 'USAGE' '\n   %s (BGO)         (FO)    [SD]            [NP]          [WT]\n   %s (-s|-m|-t|-c) (-I,-X) [-d search_dir] [-n num_pics] [-w sleep_s]\n' "$SN" "$SN";
+  note_to_stdout 'REQUIRED' '   [SD]  =: [-d search_dir]\n               -d search_dir    where to search for pics \n             [NP]  =: [-n num_pics]\n               -n num_pics      number of pics to do per run\n             [WT]  =: [-w sleep_s]\n               -w sleep_s       how many seconds to wait betwen switching\n' '-';
+  note_to_stdout 'OPTIONAL' "   (BGO) =: (-s|-m|-t|-c)\n               -t               resize feh's 'bg-tile' algorithm\n               -s               resize feh's 'bg-scale' algorithm\n               -m               resize feh's 'bg-max' algorithm\n               -c               resize feh's 'bg-center' algorithm\n             (FO)  =: (-I,-X)\n               -X xfilter_re    extended regexp for excluding matching paths\n               -I ifilter_re    extended regexp for allowing matching paths\n" '-'
+  note_to_stdout 'NOTE' '\n- inside "()" and "[]", "|" means XOR (mutually exclusive)\n- inside "()" and "[]", "," means OR (can be combined)\n\n' '-';
+}
+function print_help(){
+  export SPACER="";
+  if [[ $# -gt 0 ]]; then 
+    err_to_stderr " INVALID INVOCATION:\n $SN $*\n\n";
+    print_usage;
+    exit 255;
+  fi;
+  print_usage;
+}
+function params_handler(){
+  start_xtrace
+  declare -a PARAMS=( ${@:$OPTIND:99999} );
+  export PN=${#PARAMS[@]};
+  if [ $PN -lt $MINP ] || [ $PN -gt $MAXP ]; then
+    err_to_stderr " $PN number of arguments provided is not in range [$MINP,$MAXP]\n";
+    print_help "$*";
+  else
+    export PARAMS_VALID=1;
+  fi;
+  stop_xtrace
+}
+function getopts_handler(){
+  start_xtrace
+  let RFLAGS_N=3;
+  let PARSED_RFLAGS_N=0;
+  while getopts "hstmcd:n:w:I:X:" OPT; do #echo OPTIND:$OPTIND OPT:$OPT OPTARG:$OPTARG;
+    case $OPT in
+      d) export SD+=$OPTARG; let PARSED_RFLAGS_N++; ;;
+      n) export NP=$OPTARG; let PARSED_RFLAGS_N++; ;;
+      w) export WT=$OPTARG; let PARSED_RFLAGS_N++; ;;
+      s) export S=$OPT; ;;
+      m) export M=$OPT; ;;
+      t) export T=$OPT; ;;
+      c) export C=$OPT; ;;
+      X) export X=$OPT; export FX=$OPTARG; ;;
+      I) export I=$OPT; export FI=$OPTARG; ;;
+      h) export HELP_FLAG=$OPT;
+        export OPTIND=$( echo "$OPTIND-1" | bc ); ;;
+      :) err_to_stderr "   Option -$OPTARG requires an argument.\n"; print_help $*; ;;
+      \?) err_to_stderr "   Invalid option: -$OPTARG\n"; print_help $*; ;;
+    esac
+  done
+  if [[ $PARSED_RFLAGS_N -lt $RFLAGS_N ]]; then
+    err_to_stderr "   MISSING REQUIRED OPTS: $RFLAGS_N opts were needed but only $PARSED_RFLAGS_N were provided:\n";
+    print_help "$*";
+  fi;
+  [ -z $X ] && export FX=${DEFAULT_XFILTER};
+  [ -z $I ] && export FI=${DEFAULT_IFILTER};
+  if [[ $HELP_FLAG = "h" ]]; then
+    print_help && exit 0 || exit 5;
+  fi;
+  if   [[ -z $S ]] && [[ -z $M ]] && [[ -z $T ]] && [[ -z $C ]] ; then
+    export BGOPT=$DEFAULT_BGOPT;
+  elif [[ -n $S ]] && [[ -z $M ]] && [[ -z $T ]] && [[ -z $C ]] ; then 
+    export BGOPT='--bg-scale';
+  elif [[ -z $S ]] && [[ -n $M ]] && [[ -z $T ]] && [[ -z $C ]] ; then 
+    export BGOPT='--bg-max';
+  elif [[ -z $S ]] && [[ -z $M ]] && [[ -n $T ]] && [[ -z $C ]] ; then 
+    export BGOPT='--bg-tile';
+  elif [[ -z $S ]] && [[ -z $M ]] && [[ -z $T ]] && [[ -n $C ]] ; then 
+    export BGOPT='--bg-center';
+  else
+    err_to_stderr " options -s,-m,-t and -c are mutually exclusive\n\n";
+    print_help $*;
+  fi;
+  stop_xtrace
+}
+function img_get_random(){
+  start_xtrace
+  export BGN=${#BGS[*]};
+  export RI=$( rand_num 0 $BGN );
+  export BG="${BGS[$RI]}";
+  [ ! -f $BG ] && err_to_stderr " cant find usable image ( check filters and search dir )\n\n" && print_help "$*";
+  stop_xtrace
+  return 0;
+}
+function img_get_next(){
+  start_xtrace
+  let i=$J;
+  export BGN=${#BGS[*]};
+  export BG="${BGS[$i]}";
+  let i++; export J=$i;
+  [ ! -f $BG ] && err_to_stderr " cant find usable image ( check filters and search dir )\n\n" && print_help "$*";
+  stop_xtrace
+  return 0;
+}
+function kill_others(){
+  start_xtrace;
+  export MYPID=$$
+  export MYPPID=$( print_ppid $MYPID );
+  export DWM_PID=$( sudo pgrep -x dwm );
+  export PRGM_PIDS=$( sudo pgrep -f "bash.+$SN" | tr '\n' ' ' );
+  export NON_SELF_PIDS=$( echo $PRGM_PIDS  | tr ' ' '\n' | grep -vE "$MYPID|$MYPPID" | tr '\n' ' ' );
+  [[ -z $DWM_PID ]] && exit 1 || [[ $NON_SELF_PIDS > 0 ]] && sudo kill -9 $NON_SELF_PIDS 2>/dev/null || return 0
+  stop_xtrace;
+}
+function change_bg(){
+  start_xtrace;
+  #img_get_next $* && export CMD="${BIN} ${ROPT} ${BG} ${PARAMS[*]}";
+  img_get_random $* && export CMD="${BIN} ${ROPT} ${BG} ${PARAMS[*]}";
+  padl $CMD;
+  stop_xtrace;
+}
+function bg_looper() {
+  start_xtrace
+  getopts_handler $*;
+  params_handler $*;
+  export BIN='/usr/bin/feh';
+  export ROPT="--no-fehbg -B black ${BGOPT}";
+  export FIND_OPTS_LEFT='-L';
+  export FIND_OPTS_RIGHT='-maxdepth 1 -type f -printf "%T+\t%p\n" ';
+  export FIND_CMD="find ${FIND_OPTS_LEFT} "${SD}/" ${FIND_OPTS_RIGHT} | sort -n -r | awk '{ print \$2; }' | grep -E \"$FI\" | grep -Ev \"$FX\" ";
+  echo $FIND_CMD;
+  declare -a BGS=( $( eval $FIND_CMD ) );
+  let I=$NP;
+  while [[ $I !=  0 ]]; do
+    kill_others && change_bg $*;
+    sleep $WT;
+    let I--;
+  done;
+  stop_xtrace
+}
+function __main__(){
+  include_common;
+  let DEBUG=0; #defaults
+  start_xtrace;
+  export SN=$( basename $0 );
+  export MINP=0;
+  export MAXP=0;
+  export LOG_TO_SYSLOG='';
+  export LOGDIR='';
+  export DEFAULT_BGOPT='--bg-max'
+  export DEFAULT_IFILTER='(albums/fb|(jpg|png|gif)$)';
+  export DEFAULT_XFILTER='\s';
+  export DISPLAY=$( get_display )
+  export J=0;
+  bg_looper $*
+  stop_xtrace;
+}
+__main__ $*

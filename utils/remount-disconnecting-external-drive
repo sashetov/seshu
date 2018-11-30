@@ -1,0 +1,63 @@
+#!/bin/bash
+FS_DEVICE='/dev/sdb1'
+MOUNTPOINT='/srv/data/'
+get_pids_w_openfds_inpath() {
+  echo $( lsof $MOUNTPOINT 2>/dev/null | awk '{ print $2; }' | grep -v PID );
+}
+kill_procs_until_ready() {
+  PIDS=$(get_pids_w_openfds_inpath)
+  until [ -z "$PIDS" ]; do
+    kill -9 $PIDS;
+    PIDS=$(get_pids_w_openfds_inpath)
+  done;
+}
+check_device_not_mounted() {
+  return $( mount | grep $FS_DEVICE | wc -l )
+}
+umount_fs() {
+  umount $MOUNTPOINT
+}
+mount_fs() {
+  mount $FS_DEVICE $MOUNTPOINT
+}
+check_device_present() {
+  if [ -b $FS_DEVICE ]; then
+    return 0;
+  else
+    return 1;
+  fi;
+}
+print_unplug_device_msg_and_await_input() {
+  echo "DEVICE STILL PRESENT..."
+  echo "UNNPLUG DEVICE AND CHECK THAT GONE"
+  read
+  echo
+}
+check_device_until_gone() {
+  until ! check_device_present; do 
+    print_unplug_device_msg_and_await_input
+  done;
+}
+print_replace_device_msg_and_await_input() {
+  echo "REPLUG+VERIFY DEVICE PRESENCE..."
+  read
+}
+check_device_until_present() {
+  until check_device_present; do 
+    print_replace_device_msg_and_await_input
+  done;
+}
+check_until_device_gone_and_unmounted() {
+  until check_device_not_mounted && ! check_device_present; do
+    check_device_until_gone
+    kill_procs_until_ready
+    umount_fs
+  done;
+}
+main() {
+   check_until_device_gone_and_unmounted
+   check_device_until_present
+   kill_procs_until_ready
+   mount_fs
+}
+main $*

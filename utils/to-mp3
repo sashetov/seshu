@@ -1,0 +1,79 @@
+#!/bin/bash
+function include_common(){
+  export USERBIN_LIB="${HOME}/bin/lib/common.inc.sh";
+  . "$USERBIN_LIB";
+}
+function print_usage(){
+  note_to_stdout 'USAGE' '%s [vids_src] [mp3s_dest] (vids_dest)\n' "$SN";
+  printf '  [vids_src]   where to look for video files (maxdepth 1)\n';
+  printf '  [mp3s_dest]   where to move the mp3s\n';
+  printf '  (vids_dest)  where to move the the videos\n';
+  note_to_stdout '(vids_dest)' '%s If not provided, video file is deleted from vids_src/\n' '-';
+  note_to_stdout 'NOTE' '%s params in "[]" are REQUIRED\n' '-';
+}
+function print_help(){
+  export SPACER='';
+  export SN=$( basename $0 );
+  if [[ $# -gt 0 ]]; then 
+    err_to_stderr " INVALID INVOCATION:\n $SN $*\n\n";
+    print_usage;
+    exit 2;
+  fi;
+  print_usage;
+}
+function clean_convert(){
+  start_xtrace;
+  export BASE_F=$( basename "${IF}"; );
+  export DIR_F=$( dirname $( readlink -f "${IF}"; ); );
+  export BASE_CLEAN_F=$( echo "${BASE_F}" | sed -e 's/\(.*\)/\L\1/' | sed -r 's/\s+/ /g' | sed -r 's/[^a-z0-9]/-/g' | sed -r 's/'\."${FT}"'//g' | sed -r 's/\-+/\-/g' | sed -r 's/-$//g'; );
+  export CLEAN_F="${BASE_CLEAN_F}.${FT}";
+  export OF="${BASE_CLEAN_F}.${OFT}";
+  padl "[ -f '${CLEAN_F}' ] && rm -f '${CLEAN_F}'; [ -f '${OF}' ] && rm -f '${OF}'; [ ! -d '${MP3_MD}' ] && mkdir -p '${MP3_MD}'; "
+  export MVC='mv "${IF}" "${CLEAN_F}"'
+  echo $MVC && eval $MVC;
+  padl "ffmpeg ${FFXO} -i '${CLEAN_F}' '${MP3_MD}/${OF}';";
+  if [[ -n "${VID_MD}" ]]; then
+    padl "[ ! -d ${VID_MD} ] && mkdir -p ${VID_MD};"
+    padl "mv '${CLEAN_F}' '${VID_MD}/${CLEAN_F}';";
+  else
+    padl "rm -f ${CLEAN_F}";
+  fi;
+  stop_xtrace;
+}
+function to_mp3_youtube() {
+  start_xtrace;
+  if [ $# -gt $MAX ] || [ $# -lt $MIN ]; then #TODO -redo with new getopts func
+    print_help $*;
+  fi;
+  export SRC=$( readlink -f "$1" );
+  export Y=$(date +%Y);
+  export M=$(date +%m);
+  if [[ -n "$3" ]]; then
+    export VID_D=$( readlink -f "$3" );
+    export VID_YD="$VID_D/$Y/";
+    export VID_MD="$VID_YD/$M/";
+  fi;
+  export MP3_D=$( readlink -f "$2" );
+  export MP3_YD="$MP3_D/$Y/";
+  export MP3_MD="$MP3_YD/$M/";
+  for FT in $IFTS; do
+    find "$SRC/" -name "*.$FT" -maxdepth 1 -print0 2>/dev/null | while IFS=' ' read -r -d '' IF; do 
+      clean_convert;
+    done;
+  done;
+  stop_xtrace;
+}
+function __main__(){
+  include_common
+  let DEBUG=0; #defaults
+  start_xtrace
+  export MIN=2;
+  export MAX=3;
+  export IFTS="mp4 opus m4a ogg webm 3gp";
+  export OFT="mp3";
+  export FFXO=""; #"-loglevel verbose -benchmark_all -stats -qphist -debug_ts"
+  export LOG_TO_SYSLOG='';
+  to_mp3_youtube $*
+  stop_xtrace
+}
+__main__ $*

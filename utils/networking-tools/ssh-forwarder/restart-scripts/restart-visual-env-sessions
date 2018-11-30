@@ -1,0 +1,21 @@
+#!/bin/bash
+RTUNNEL_LOCALPORT='2220';
+REMOTE_AUTOLOGIN_USER="sasheto";
+LOCALHOST="127.0.0.1";
+SLEEP_TIME="10";
+function killall_remote_x_and_wayland_sessions {
+  ssh -p "${RTUNNEL_LOCALPORT}" "${REMOTE_AUTOLOGIN_USER}@${LOCALHOST}" "killall gdm-x-session";
+  ssh -p "${RTUNNEL_LOCALPORT}" "${REMOTE_AUTOLOGIN_USER}@${LOCALHOST}" "sudo service gdm stop";
+}
+function start_remote_gdm {
+  ssh -p "${RTUNNEL_LOCALPORT}" "${REMOTE_AUTOLOGIN_USER}@${LOCALHOST}" "killall gdm-x-session -9";
+  ssh -p "${RTUNNEL_LOCALPORT}" "${REMOTE_AUTOLOGIN_USER}@${LOCALHOST}" "sudo service gdm start";
+  sleep $SLEEP_TIME;
+  ssh -p "${RTUNNEL_LOCALPORT}" "${REMOTE_AUTOLOGIN_USER}@${LOCALHOST}" "sudo pstree";
+}
+function __main__(){#echo "1. KILLING ALL REMOTE X AND WAYLAND SESSIONS"
+  killall_remote_x_and_wayland_sessions; #echo "2. STARTING GDM SESSION ";
+  start_remote_gdm; #echo "##### HOPEFULLY EVERYTHING WENT WELL, IF NOT TAKE ACTION WITH SSH:";
+  ssh -p "${RTUNNEL_LOCALPORT}" "${REMOTE_AUTOLOGIN_USER}@${LOCALHOST}" "sudo pstree -npla $(pgrep -x gdm)";
+}
+__main__ $*

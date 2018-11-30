@@ -1,0 +1,21 @@
+#!/bin/bash
+function check_args(){
+  [ $# -ne 2 ] && printf 'ERR: bad(%s) argc \nUSAGE: %s SESSION_NAME TARGET_WIN_NUM\n' $# $(basename $0) 1>&2 && exit 255;
+  export ARGS_VALID=1;
+}
+function params_handler(){
+  [[ $ARGS_VALID != 1 ]] && check_args $*;
+  export SN=$1;
+  let NN=$2;
+  let WN=$( eval "tmux lsw | grep -i '*' | sed -r 's/^([0-9]+).*$/\1/g'" );
+}
+function tmvw(){
+  params_handler $*;
+  export C= "tmux movew -s '${SN}:${WN}' -t '${SN}:${NN}';";
+  echo $C && eval $C;
+}
+function __main__(){
+  check_args $*;
+  params_handler
+}
+__main__ $*;

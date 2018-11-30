@@ -1,0 +1,19 @@
+#!/bin/bash
+function sar_all(){
+  sar -bBdFHqSuvwWy -I SUM -I ALL 0
+}
+function sar_no_interrupts(){
+  sar -bBdFHqSuvwWy -I SUM -I ALL 0
+}
+function sar_all_clean_empty_interrupts_nocolor(){
+  while :; do sleep 1; reset; { sar -bBdFHqSuvwWy -I SUM -I ALL 1 1 | cat | while read t; do echo $t; done; }  | grep -ivE '0\.00$'; done;
+}
+function __main__(){
+  export SLEEP=1
+  while :; do
+    sar_all_clean_empty_interrupts_nocolor
+    sleep $SLEEP;
+    clear;
+  done;
+}
+__main__ $*

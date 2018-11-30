@@ -1,0 +1,7 @@
+export SHU_PRCD="$SHUTILS_DIR/prefrc.d";                                     #BASHPREFS MODULE INCLUDES IN NUMERICAL ORDER
+export SHU_LIBD="$SHUTILS_DIR/lib";
+export SHU_BIND="$SHUTILS_DIR/utils";
+. "${SHU_LIBD}/common.inc.sh";
+for PREFS_INCLUDE in ${SHU_PRCD}/* ; do
+  . $PREFS_INCLUDE;
+done

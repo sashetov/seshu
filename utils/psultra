@@ -1,0 +1,173 @@
+#!/bin/bash
+function print_legend {
+  #set -x
+  let i=0
+  echo 'Legend:'; 
+  #order is important here...
+  declare -ag psFormatCodes=()
+  declare -ag psHeadersDescriptions=();
+  declare -Ag FMT_DESCR_HASH=();
+  FMT_DESCR_HASH["COMMAND"]="command with all its arguments as a string. Modifications to the arguments may be shown. The output in this column may contain spaces. A process marked <defunct> is partly dead, waiting to be fully destroyed by its parent. Sometimes the process args will be unavailable; when this happens, ps will instead print the executable name in brackets. (alias cmd, command). See also the comm format keyword, the -f option, and the c option. When specified last, this column will extend to the edge of the display. If ps can not determine display width, as when output is redirected (piped) into a file or another command, the output width is undefined (it may be 80, unlimited, determined by the TERM variable, and so on). The COLUMNS environment variable or --cols option may be used to exactly determine the width in this case. The w or -w option may be also be used to adjust width. comm COMMAND command name (only the executable name). Modifications to the command name will not be shown. A process marked <defunct> is partly dead, waiting to be fully destroyed by its parent. The output in this column may contain spaces. (alias ucmd, ucomm). See also the args format keyword, the -f option, and the c option. When specified last, this column will extend to the edge of the display. If ps can not determine display width, as when output is redirected (piped) into a file or another command, the output width is undefined (it may be 80, unlimited, determined by the TERM variable, and so on). The COLUMNS environment variable or --cols option may be used to exactly determine the width in this case. The w or -w option may be also be used to adjust width. command COMMAND See args. (alias args, command). fname COMMAND first 8 bytes of the base name of the processs executable file. The output in this column may contain spaces. ucomm COMMAND see comm. (alias comm, ucmd). ";
+  FMT_DESCR_HASH["TIME"]="accumulated cpu time, user + system. The display format is usually MMM:SS, but can be shifted to the right if the process used more than 999 minutes of cpu time. cputime TIME cumulative CPU time, [DD-]hh:mm:ss format. (alias time). time TIME cumulative CPU time, [DD-]HH:MM:SS format. (alias cputime). ";
+  FMT_DESCR_HASH["F"]="flags associated with the process, see the PROCESS FLAGS section. (alias flag, flags). flag F see f. (alias f, flags). flags F see f. (alias f, flag). ";
+  FMT_DESCR_HASH["WCHAN"]="address of the kernel function where the process is sleeping (use wchan if you want the kernel function name). Running tasks will display a dash (-) in this column. wchan WCHAN name of the kernel function in which the process is sleeping, a - if the process is running, or a * if the process is multi-threaded and ps is not displaying threads. ";
+  FMT_DESCR_HASH["VSZ"]="see vsz. (alias vsz). vsz VSZ virtual memory size of the process in KiB (1024-byte units). Device mappings are currently excluded; this is subject to change. (alias vsize). ";
+  FMT_DESCR_HASH["USER"]="see euser. (alias euser, user). user USER see euser. (alias euser, uname). ";
+  FMT_DESCR_HASH["TT"]="controlling tty (terminal). (alias tname, tty). tty TT controlling tty (terminal). (alias tname, tt). ";
+  FMT_DESCR_HASH["STARTED"]="time the command started. See also bsdstart, start, start_time, and stime. start STARTED time the command started. If the process was started less than 24 hours ago, the output format is HH:MM:SS, else it is  Mmm dd (where Mmm is a three-letter month name). See also lstart, bsdstart, start_time, and stime. ";
+  FMT_DESCR_HASH["START"]="time the command started. If the process was started less than 24 hours ago, the output format is  HH:MM, else it is  Mmm:SS (where Mmm is the three letters of the month). See also lstart, start, start_time, and stime. start_time START starting time or date of the process. Only the year will be displayed if the process was not started the same year ps was invoked, or MmmDD if it was not started the same day, or HH:MM otherwise. See also bsdstart, start, lstart, and stime. ";
+  FMT_DESCR_HASH["S"]="minimal state display (one character). See section PROCESS STATE CODES for the different values. See also stat if you want additional information displayed. (alias state). state S see s. (alias s). ";
+  FMT_DESCR_HASH["RSS"]="resident set size, the non-swapped physical memory that a task has used (in kiloBytes). (alias rssize, rsz). rssize RSS see rss. (alias rss, rsz). ";
+  FMT_DESCR_HASH["PENDING"]="mask of the pending signals. See signal(7). Signals pending on the process are distinct from signals pending on individual threads. Use the m option or the -m option to see both. According to the width of the field, a 32 or 64 bits mask in hexadecimal format is displayed. (alias sig). sig PENDING see pending. (alias pending, sig_pend). ";
+  FMT_DESCR_HASH["NI"]="nice value. This ranges from 19 (nicest) to -20 (not nice to others), see nice(1). (alias nice). nice NI see ni.(alias ni). ";
+  FMT_DESCR_HASH["%MEM"]="ratio of the processs resident set size to the physical memory on the machine, expressed as a percentage. (alias pmem). pmem %MEM see %mem. (alias %mem). ";
+  FMT_DESCR_HASH["IGNORED"]="mask of the ignored signals, see signal(7). According to the width of the field, a 32 or 64 bits mask in hexadecimal format is displayed. (alias sig_ignore, sigignore). sigignore IGNORED see ignored. (alias ignored, sig_ignore). ";
+  FMT_DESCR_HASH["ELAPSED"]="elapsed time since the process was started, in the form [[DD-]hh:]mm:ss. etimes ELAPSED elapsed time since the process was started, in seconds. ";
+  FMT_DESCR_HASH["%CPU"]="cpu utilization of the process in ##.# format. Currently, it is the CPU time used divided by the time the process has been running (cputime/realtime ratio), expressed as a percentage. It will not add up to 100% unless you are lucky. (alias pcpu). pcpu %CPU see %cpu. (alias %cpu). ";
+  FMT_DESCR_HASH["CLS"]="scheduling class of the process. (alias policy, cls). Fields possible values are: - not reported TS SCHED_OTHER FF SCHED_FIFO RR SCHED_RR B SCHED_BATCH ISO SCHED_ISO IDL SCHED_IDLE ? unknown value cls CLS scheduling class of the process. (alias policy, cls). Fields possible values are: - not reported TS SCHED_OTHER FF SCHED_FIFO RR SCHED_RR B SCHED_BATCH ISO SCHED_ISO IDL SCHED_IDLE ? unknown value ";
+  FMT_DESCR_HASH["CAUGHT"]="mask of the caught signals, see signal(7). According to the width of the field, a 32 or 64 bits mask in hexadecimal format is displayed. (alias sig_catch, sigcatch). sigcatch CAUGHT see caught. (alias caught, sig_catch). ";
+  FMT_DESCR_HASH["BLOCKED"]="mask of the blocked signals, see signal(7). According to the width of the field, a 32 or 64-bit mask in hexadecimal format is displayed. (alias sig_block, sigmask). sigmask BLOCKED see blocked. (alias blocked, sig_block). ";
+  FMT_DESCR_HASH["UUNIT"]="displays user unit which a process belongs to, if systemd support has been included. ";
+  FMT_DESCR_HASH["UTSNS"]="Unique inode number describing the namespace the process belongs to. See namespaces(7). ";
+  FMT_DESCR_HASH["USERNS"]="Unique inode number describing the namespace the process belongs to. See namespaces(7). ";
+  FMT_DESCR_HASH["UNIT"]="displays unit which a process belongs to, if systemd support has been included. ";
+  FMT_DESCR_HASH["UID"]="see euid. (alias euid). ";
+  FMT_DESCR_HASH["TTY"]="controlling tty (terminal). (alias tt, tty). ";
+  FMT_DESCR_HASH["TRS"]="text resident set size, the amount of physical memory devoted to executable code. ";
+  FMT_DESCR_HASH["TPGID"]="ID of the foreground process group on the tty (terminal) that the process is connected to, or -1 if the process is not connected to a tty. ";
+  FMT_DESCR_HASH["TID"]="the unique number representing a dispatchable entity (alias lwp, spid). This value may also appear as: a process ID (pid); a process group ID (pgrp); a session ID for the session leader (sid); a thread group ID for the thread group leader (tgid); and a tty process group ID for the process group leader (tpgid). ";
+  FMT_DESCR_HASH["THCNT"]="see nlwp. (alias nlwp). number of kernel threads owned by the process. ";
+  FMT_DESCR_HASH["TGID"]="a number representing the thread group to which a task belongs (alias pid). It is the process ID of the thread group leader. ";
+  FMT_DESCR_HASH["SZ"]="size in physical pages of the core image of the process. This includes text, data, and stack space. Device mappings are currently excluded; this is subject to change. See vsz and rss. ";
+  FMT_DESCR_HASH["SVUID"]="see suid. (alias suid). ";
+  FMT_DESCR_HASH["SVGID"]="see sgid. (alias sgid). ";
+  FMT_DESCR_HASH["SUSER"]="saved user name. This will be the textual user ID, if it can be obtained and the field width permits, or a decimal representation otherwise. (alias svuser). ";
+  FMT_DESCR_HASH["SUPGRP"]="group names of supplementary groups, if any. See getgroups(2). ";
+  FMT_DESCR_HASH["SUPGID"]="group ids of supplementary groups, if any. See getgroups(2). ";
+  FMT_DESCR_HASH["SUID"]="saved user ID. (alias svuid). ";
+  FMT_DESCR_HASH["STAT"]="multi-character process state. See section PROCESS STATE CODES for the different values meaning. See also s and state if you just want the first character displayed. ";
+  FMT_DESCR_HASH["STACKP"]="address of the bottom (start) of stack for the process. ";
+  FMT_DESCR_HASH["SPID"]="see lwp. (alias lwp, tid). ";
+  FMT_DESCR_HASH["SLICE"]="displays the slice unit which a process belongs to, if systemd support has been included. ";
+  FMT_DESCR_HASH["SIZE"]="approximate amount of swap space that would be required if the process were to dirty all writable pages and then be swapped out. This number is very rough! ";
+  FMT_DESCR_HASH["SID"]="see sess. (alias sess, session). ";
+  FMT_DESCR_HASH["SGROUP"]="saved group name. This will be the textual group ID, if it can be obtained and the field width permits, or a decimal representation otherwise. ";
+  FMT_DESCR_HASH["SGID"]="saved group ID. (alias svgid). ";
+  FMT_DESCR_HASH["SESSION"]="displays the login session identifier of a process, if systemd support has been included. ";
+  FMT_DESCR_HASH["SESS"]="session ID or, equivalently, the process ID of the session leader. (alias session, sid). ";
+  FMT_DESCR_HASH["SEAT"]="displays the identifier associated with all hardware devices assigned to a specific workplace, if systemd support has been included. ";
+  FMT_DESCR_HASH["SCH"]="scheduling policy of the process. The policies SCHED_OTHER (SCHED_NORMAL), SCHED_FIFO, SCHED_RR, SCHED_BATCH, SCHED_ISO, and SCHED_IDLE are respectively displayed as 0, 1, 2, 3, 4, and 5. ";
+  FMT_DESCR_HASH["RUSER"]="real user ID. This will be the textual user ID, if it can be obtained and the field width permits, or a decimal representation otherwise. ";
+  FMT_DESCR_HASH["RUID"]="real user ID. ";
+  FMT_DESCR_HASH["RTPRIO"]="realtime priority. ";
+  FMT_DESCR_HASH["RSZ"]="see rss. (alias rss, rssize). ";
+  FMT_DESCR_HASH["RGROUP"]="real group name. This will be the textual group ID, if it can be obtained and the field width permits, or a decimal representation otherwise. ";
+  FMT_DESCR_HASH["RGID"]="real group ID. ";
+  FMT_DESCR_HASH["PSR"]="processor that process is currently assigned to. ";
+  FMT_DESCR_HASH["PRI"]="priority of the process. Higher number means lower priority. ";
+  FMT_DESCR_HASH["PPID"]="parent process ID. ";
+  FMT_DESCR_HASH["POL"]="scheduling class of the process. (alias class, cls). Possible values are: - not reported TS SCHED_OTHER FF SCHED_FIFO RR SCHED_RR B SCHED_BATCH ISO SCHED_ISO IDL SCHED_IDLE ? unknown value ";
+  FMT_DESCR_HASH["PIDNS"]="Unique inode number describing the namespace the process belongs to. See namespaces(7). ";
+  FMT_DESCR_HASH["PID"]="a number representing the process ID (alias tgid). ";
+  FMT_DESCR_HASH["PGRP"]="see pgid. (alias pgid). ";
+  FMT_DESCR_HASH["PGID"]="process group ID or, equivalently, the process ID of the process group leader. (alias pgrp). ";
+  FMT_DESCR_HASH["P"]="processor that the process is currently executing on. Displays * if the process is not currently running or runnable. ";
+  FMT_DESCR_HASH["OWNER"]="displays the Unix user identifier of the owner of the session of a process, if systemd support has been included. ";
+  FMT_DESCR_HASH["NLWP"]="number of lwps (threads) in the process. (alias thcount). ";
+  FMT_DESCR_HASH["NETNS"]="Unique inode number describing the namespace the process belongs to. See namespaces(7). ";
+  FMT_DESCR_HASH["MNTNS"]="Unique inode number describing the namespace the process belongs to. See namespaces(7). ";
+  FMT_DESCR_HASH["MINFLT"]="The number of minor page faults that have occurred with this process. ";
+  FMT_DESCR_HASH["MAJFLT"]="The number of major page faults that have occurred with this process. ";
+  FMT_DESCR_HASH["MACHINE"]="displays the machine name for processes assigned to VM or container, if systemd support has been included. ";
+  FMT_DESCR_HASH["LWP"]="light weight process (thread) ID of the dispatchable entity (alias spid, tid). See tid for additional information. ";
+  FMT_DESCR_HASH["LABEL"]="security label, most commonly used for SELinux context data. This is for the Mandatory Access Control (MAC) found on high-security systems. ";
+  FMT_DESCR_HASH["IPCNS"]="Unique inode number describing the namespace the process belongs to. See namespaces(7). ";
+  FMT_DESCR_HASH["GROUP"]="see egroup. (alias egroup). ";
+  FMT_DESCR_HASH["GID"]="see egid. (alias egid). ";
+  FMT_DESCR_HASH["FUSER"]="filesystem access user ID. This will be the textual user ID, if it can be obtained and the field width permits, or a decimal representation otherwise. ";
+  FMT_DESCR_HASH["FUID"]="filesystem access user ID. (alias fsuid). ";
+  FMT_DESCR_HASH["FGROUP"]="filesystem access group ID. This will be the textual group ID, if it can be obtained and the field width permits, or a decimal representation otherwise. (alias fsgroup). ";
+  FMT_DESCR_HASH["FGID"]="filesystem access group ID. (alias fsgid). ";
+  FMT_DESCR_HASH["EUSER"]="effective user name. This will be the textual user ID, if it can be obtained and the field width permits, or a decimal representation otherwise. The n option can be used to force the decimal representation. (alias uname, user). ";
+  FMT_DESCR_HASH["EUID"]="effective user ID (alias uid). ";
+  FMT_DESCR_HASH["ESP"]="stack pointer. ";
+  FMT_DESCR_HASH["EIP"]="instruction pointer. ";
+  FMT_DESCR_HASH["EGROUP"]="effective group ID of the process. This will be the textual group ID, if it can be obtained and the field width permits, or a decimal representation otherwise. (alias group). ";
+  FMT_DESCR_HASH["EGID"]="effective group ID number of the process as a decimal integer. (alias gid). ";
+  FMT_DESCR_HASH["DRS"]="data resident set size, the amount of physical memory devoted to other than executable code. ";
+  FMT_DESCR_HASH["CP"]="per-mill (tenths of a percent) CPU usage. (see %cpu). ";
+  FMT_DESCR_HASH["CGROUP"]="display control groups to which the process belongs. ";
+  FMT_DESCR_HASH["C"]="processor utilization. Currently, this is the integer value of the percent usage over the lifetime of the process. (see %cpu). ";
+  {
+    while [ $i -lt  ${#psActualHeaders[*]} ]; do
+      HEADER="${psActualHeaders[$i]}";
+      psFormatCodes+=( "${FMT_HASH[$HEADER]}" );
+      psHeadersDescriptions+=( "${FMT_DESCR_HASH[$HEADER]}" );
+      printf '%b|%b|%b\n' "${psActualHeaders[$i]}" "${psFormatCodes[$i]}" "${psHeadersDescriptions[$i]}";
+      let i++;
+    done;
+  } | column -s '|' -t -c 2
+  #set +x
+}
+function psultra(){
+  #set -x
+  declare -Ag FMT_HASH=();
+  declare -g FMT_STRING='';
+  declare -g psActualHeaders
+  export TMP_PIPE=`mktemp`
+  rm -f $TMP_PIPE
+  mkfifo $TMP_PIPE
+  echo "${psActualHeaders[*]}" | tr  ' ' '\n' > $TMP_PIPE &
+  while read HEADER; do
+    CODE=`ps L | grep $HEADER | awk '{print $1;}' | head -n 1`;
+    FMT_HASH["${HEADER}"]="${CODE}";
+    HEADER_STRLEN=$(echo $HEADER | wc -c);
+    COLUMN_LEN=$(echo "$HEADER_STRLEN"'+ 2' | bc);
+    if [ $HEADER == "CGROUP" ]; then 
+      COLUMN_LEN=100;
+    elif [ $HEADER == "RSS" ]; then 
+      COLUMN_LEN=20;
+    elif [ $HEADER == "COMMAND" ] ; then 
+      COLUMN_LEN=100;
+    elif [ $HEADER == "SUPGID" ] ||  [ $HEADER == "SUPGRP" ] ; then 
+      COLUMN_LEN=20;
+    elif [ $HEADER == "STARTED" ] ; then
+      COLUMN_LEN=25;
+    elif [ $HEADER == "START" ]  ||  [ $HEADER == "S" ]; then 
+      COLUMN_LEN=7;
+    elif [ $HEADER == "USER" ]; then 
+      COLUMN_LEN=20;
+    elif [ $HEADER == "VSZ" ] || [ $HEADER == "RSS" ]; then 
+      COLUMN_LEN=16;
+    elif [ $HEADER == "UTSNS" ] || [ $HEADER == "USERNS" ] || [ $HEADER == "PIDNS"  ] || [ $HEADER == "NETNS"  ] || [ $HEADER == "MNTNS"  ] || [ $HEADER == "IPCNS" ]; then
+      COLUMN_LEN=10;
+    elif [ $HEADER == "UUNIT" ]; then
+      COLUMN_LEN=20;
+    elif [ $HEADER == "UNIT" ] || [ $HEADER == "SLICE" ]; then
+      COLUMN_LEN=30;
+    elif [ $HEADER == "STACKP" ] || [ $HEADER == "ESP" ] || [ $HEADER == "EIP" ]; then
+      COLUMN_LEN=10;
+    fi;
+    if [ -z "${FMT_STRING}" ]; then 
+      FMT_STRING="${CODE}:${COLUMN_LEN}=${HEADER},";
+    else
+      FMT_STRING="${FMT_STRING}${CODE}:${COLUMN_LEN}=${HEADER},";
+    fi;
+  done < $TMP_PIPE
+  rm -f $TMP_PIPE
+  sudo ps --headers axm -e --format $FMT_STRING --sort +ppid;
+  #set +x
+}
+function __main__(){
+  export FMT_CODES
+  export FMT_CODES_NAMES
+  export FMT_STRING
+  declare -A FMT_HASH;
+  declare -A FMT_DESCR_HASH;
+  declare -a psFormatCodes;
+  declare -a psActualHeaders=( "PPID" "PID" "NLWP" "SPID" "%MEM" "%CPU" "TIME" "F" "WCHAN" "VSZ" "RSS" "USER" "TT" "STARTED" "START" "S"  "PENDING" "IGNORED" "CAUGHT" "BLOCKED" "NI" "ELAPSED" "CLS" "UUNIT" "UNIT" "UTSNS" "USERNS" "PIDNS" "NETNS" "MNTNS" "IPCNS" "UID" "TTY" "TRS" "TPGID" "TID" "TGID" "SZ" "SVUID" "SVGID" "SUSER" "SUPGRP" "SUPGID" "SUID" "STAT" "STACKP" "ESP" "EIP" "SLICE" "SIZE" "SID" "SGROUP" "SGID" "SESSION" "SESS" "SEAT" "SCH" "RUSER" "RUID" "RTPRIO" "RSZ" "RGROUP" "RGID" "PSR" "PRI"  "POL" "PGRP" "PGID" "P" "OWNER" "MINFLT" "MAJFLT" "MACHINE" "LWP" "LABEL" "GROUP" "GID" "FUSER" "FUID" "FGROUP" "FGID" "EUSER" "EUID" "EGROUP" "EGID" "DRS" "CP" "CGROUP" "C" "COMMAND" );
+  declare -a psHeadersDescriptions;
+  psultra;
+  print_legend;
+}
+__main__ $*

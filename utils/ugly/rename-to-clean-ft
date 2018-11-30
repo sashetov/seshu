@@ -1,0 +1,26 @@
+#!/bin/bash
+function shu_init(){
+  export SHUTILS_DIR="$HOME/bin";
+  export INIT_SHUTILS="$SHUTILS_DIR/p.sh";
+  . $INIT_SHUTILS || echo ERR_SHUTILS_INCLUDE >&2 | tee | logger -i -t shu_init;
+}
+function clean_name(){
+  export BASE_F=$( basename "${INF}"; );
+  export DIR_F=$( dirname $( readlink -f "${INF}"; ); );
+  export BASE_CLEAN_F=$( echo "${BASE_F}" | sed -e 's/\(.*\)/\L\1/' | sed -r 's/\s+/ /g' | sed -r 's/[^a-z0-9]/-/g' | sed -r 's/'\."${FT}"'//g' | sed -r 's/\-+/\-/g' | sed -r 's/-$//g' );
+  export CLEAN_F="${BASE_CLEAN_F}.${FT}";
+  echo $CLEAN_F;
+}
+function __main__(){
+  shu_init
+  export DEBUG=0;
+  export BASEDIR='/home/sasheto/Downloads/pdf/';
+  for FT in pdf epub; do 
+    find $BASEDIR -name "*.$FT" | while read INF; do
+    export CN=$(clean_name "${INF}");
+    export CMD=$(printf 'mv %q %q\n'  "$INF" "$CN");
+    padl $CMD;
+    done; 
+  done;
+}
+__main__ $*

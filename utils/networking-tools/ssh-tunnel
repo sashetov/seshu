@@ -1,0 +1,13 @@
+#!/bin/bash
+function __main__(){
+  export LOCAL_PORT=$1
+  export REMOTE_PORT=$2
+  export SSH_USER=$3
+  export REMOTE_HOST=$4
+  if [ $# -ne 4 ]; then
+    echo -e "usage:\n$0 LOCAL_PORT REMOTE_PORT SSH_USER REMOTE_HOST\nexample: $0 '5900' '5900' 'root' '185.119.172.240'";
+    exit 1
+  fi;
+  ssh -L "${LOCAL_PORT}:127.0.0.1:${REMOTE_PORT}" -N -f -l $SSH_USER $REMOTE_HOST
+}
+__main__ $*
