@@ -1,0 +1,40 @@
+#!/usr/bin/node
+function ipToBinary(ip) {
+  var parts = ip.split('.');
+  var bin = '';
+  for( var i = 0; i < parts.length; i++ ){
+    var dec = parseInt(parts[i],10);
+    var binp = dec.toString(2);
+    var l = binp.length;
+    if( l < 8 ) {
+      var d = 8 - l;
+      for(var j=0; j < d; j++) {
+        binp = '0' + binp;
+      }
+    }
+    bin = bin + binp;
+  }
+  return bin;
+}
+function ipInRange(ip,ipRange){
+  console.log(ip +' in range '+ ipRange + '?');
+  var rp = ipRange.split('/'), rip = rp[0], rsize=32-parseInt(rp[1]);
+  var ipb=ipToBinary(ip), ripb=ipToBinary(rip), rbs=ripb, rbe=ripb;
+  for( var i=31-rsize; i<32; i++){
+    rbs= rbs.substr(0, i) + '0'+ rbs.substr(i+1);
+    rbe= rbe.substr(0, i) + '1'+ rbe.substr(i+1);
+  }
+  var rds = parseInt(rbs,2), rde=parseInt(rbe,2), ipd=parseInt(ipb,2);
+  console.log(rsize);
+  console.log(rbs, rds); //rANGE bINARY sTART, rANGE dECIMAL sTART
+  console.log(ipb, ipd); //iP    bINARY      , iP    dECIMAL
+  console.log(rbe, rde); //rANGE bINARY eND  , rANGE dECIMAL eND
+  var inRange=false;
+  if( ipd <= rde && ipd >= rds ) inRange=true;
+  return inRange;
+}
+console.log(ipInRange('204.100.0.2','204.222.111.22/12'));
+console.log(ipInRange('204.100.0.2','204.222.111.22/11'));
+console.log(ipInRange('204.100.0.2','204.222.111.22/10'));
+console.log(ipInRange('204.100.0.2','204.222.111.22/9'));
+console.log(ipInRange('204.100.0.2','204.222.111.22/8'));
