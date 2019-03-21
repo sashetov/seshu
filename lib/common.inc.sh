@@ -385,7 +385,7 @@ function normal_prompt(){
   echo -ne ""
 }
 function prompt_dtcwd(){
-  echo -ne "\e[2;40;31m$( date +%T )\e[m\e[4;40;36m$( date +%D )\e[m\e[1;40;37m$( short_cwd )\e[m\e[5;41;37m$\e[m";
+  echo -ne "\e[2;40;31m$( date +%T )\e[m\e[4;40;36m$( date +%D )\e[m\e[1;40;37m$( short_cwd )\e[m";
 }
 function long_ass_prompt(){
   MYUSER="$(whoami)"                        && export MYUSER;
@@ -428,7 +428,7 @@ function set_prompt_PS1(){
   start_xtrace
   unset PS1
   export PS1=''
-  export P='$ ';
+  export P="$";
   if [[ $PS1_TYPE = 'DATE_TIME_CWD' ]]; then #PROMPT PREFIXES
     export PS1+='$( prompt_dtcwd )';
   elif [[ $PS1_TYPE = 'PATRIOTIC' ]]; then
@@ -438,7 +438,7 @@ function set_prompt_PS1(){
   elif [[ $PS1_TYPE = "FULL_LINE_OVERFLOWS" ]]; then
     export PS1+='$( long_ass_prompt )\n'; 
   else 
-    export PS1='$( basename $(pwd))/ ';
+    export PS1='';
   fi;
   if [[ $GIT_BRANCH_PS1 != 0 ]]; then #POSTFIXES
     export PS1+='$( color_branch )';
@@ -446,6 +446,6 @@ function set_prompt_PS1(){
   if [ "$ENABLE_RANDOM_IMAGES_DISPLAY" -gt 0 ]; then
     export PS1+='$( display_rand_img )'
   fi;
-  export PS1+='\e[38;5;46m'${P}'\e[0m'
+  export PS1+='\[\033[5;41;37m\]${P}\[\033[0m\] '
   stop_xtrace;
 }

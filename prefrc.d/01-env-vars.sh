@@ -1,7 +1,7 @@
 declare -g DEBUG=0;                                                           #WHETHER TO DO XTRACE DEBUGGING OR NOT
 export TERM='screen-256color';                                                #TERMINAL TWEAKS ETC
 export COLORTERM='truecolor';                                                 #USED BY CERTAIN COLOR TERMINAL EMULATORS
-export PS1_TYPE='';                                                           #PROMPT TYPE OPTIONS
+export PS1_TYPE='DATE_TIME_CWD';                                              #PROMPT TYPE OPTIONS
 export GIT_BRANCH_PS1=1;                                                      #PRINT GIT BRANCH IN PS1
 export ENABLE_RANDOM_IMAGES_DISPLAY=0;                                        #USE W3MIMG TO DISPLAY RAND IMG IN CONSOLE VIA /DEV/FB0
 export ALWAYS_RECORD='1';                                                     #ALWAYS RECORD TERM SESSION WHEN STARTING SCREEN ETC
@@ -25,6 +25,7 @@ export LESS='SRC';                                                            #L
 export MANOPT='';                                                             #MANOPTS
 export MANPAGER='';                                                           #MANPAGER - EMPTY BUT ALIAS FOR MAN RUNS MANWRAPPER WHICH SETS THIS MANUALLY
 export MANWIDTH='';                                                           #UNSET HERE, SET IN MANWRAPPER
+export _JAVA_AWT_WM_NONREPARENTING=1;                                         #PREVENTS WHITE WINDOW IN DWM for java apps
 export PKG_CONFIG_PATH="/usr/lib64/pkgconfig/";                               #PKG_CONFIG_PATH
 export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/lib/pkgconfig/";
 export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/";
