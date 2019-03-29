@@ -1,0 +1,4 @@
+#!/srv/data/altpython/venvs/3.6.1-generic/bin/python
+import sys
+import whois
+print(whois.whois(sys.argv[1]))

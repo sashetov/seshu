@@ -1,9 +1,11 @@
 declare -g DEBUG=0;                                                           #WHETHER TO DO XTRACE DEBUGGING OR NOT
 export TERM='screen-256color';                                                #TERMINAL TWEAKS ETC
 export COLORTERM='truecolor';                                                 #USED BY CERTAIN COLOR TERMINAL EMULATORS
-export PS1_TYPE='DATE_TIME_CWD';                                              #PROMPT TYPE OPTIONS
+export PS1_TYPE='contegix';                                                   #PROMPT TYPE OPTIONS
 export GIT_BRANCH_PS1=1;                                                      #PRINT GIT BRANCH IN PS1
 export ENABLE_RANDOM_IMAGES_DISPLAY=0;                                        #USE W3MIMG TO DISPLAY RAND IMG IN CONSOLE VIA /DEV/FB0
+export RIMAGES_PROBABILITY=10                                                 #probability that random image will be displayed on each ps1
+export PICS_DIR='/data/pics/2018/ /data/pics/gif/ /data/pics/2017/ /data/pics/2016/ /data/pics/2012/ ';                                           #DIR TO USE FOR RAND IMAGES
 export ALWAYS_RECORD='1';                                                     #ALWAYS RECORD TERM SESSION WHEN STARTING SCREEN ETC
 export LOGDIR="";                                                             #PHYSICAL LOGFILE DIR FOR DOLOG
 export ALTOPT="/srv/data/opt";                                                #ALT PYTHON #TODO: NOT A GOOD SOLUTION FOR SYSTEM PYTHON - EITHER MAKE IT BETTER OR LEARN HOW TO USE THE SYSTEM

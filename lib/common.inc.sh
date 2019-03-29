@@ -1,7 +1,6 @@
 export COMMON_INC=${BASH_SOURCE[0]}; #THIS FILE
 export MAXARGC=100000;
 export LOG_BUFFER_LEN='0';
-export PICS_DIR='/data/pics/';
 export ECHO_MODE=color;
 export SPACER;
 export UJRNLT_PID;
@@ -328,9 +327,9 @@ function search_with_qs(){
   stop_xtrace
 }
 function display_rand_img {                                                   #/dev/fb*
-  p=1; # make it rare-ish
-  maxw=500
-  maxh=500
+  p=$RIMAGES_PROBABILITY; # make it rare-ish
+  maxw=$COLUMNS
+  maxh=$LINES
   draw=$(python -c 'import random; DRAW=random.randint(0,100); print(DRAW)');
   if [ $draw -lt $p ]; then { #echo draw$draw >> /tmp/t
     export img=$( find ${PICS_DIR} -type f | egrep -v ' |svg' | shuf | head -n 1 );
@@ -385,7 +384,10 @@ function normal_prompt(){
   echo -ne ""
 }
 function prompt_dtcwd(){
-  echo -ne "\e[2;40;31m$( date +%T )\e[m\e[4;40;36m$( date +%D )\e[m\e[1;40;37m$( short_cwd )\e[m";
+  echo -ne "\e[$( date +%T )\e[m\e[4;40;36m$( date +%D%Z )\e[m\e[1;40;37m$( short_cwd )\e[m";
+}
+function contegix(){
+  echo -ne "avassilevski ";
 }
 function long_ass_prompt(){
   MYUSER="$(whoami)"                        && export MYUSER;
@@ -419,10 +421,10 @@ function short_cwd(){
     local FIRST_CHAR=$( echo $LTR_DIR | head -c 1 );
     PATH_CWD_SHORT="${PATH_CWD_SHORT}/${FIRST_CHAR}";
   }; done;
-PATH_CWD_SHORT="${PATH_CWD_SHORT}/$CWD_NAME";
-echo $PATH_CWD_SHORT
-stop_xtrace
-return $?;
+  PATH_CWD_SHORT="${PATH_CWD_SHORT}/$CWD_NAME";
+  echo $PATH_CWD_SHORT
+  stop_xtrace
+  return $?;
 }
 function set_prompt_PS1(){
   start_xtrace
@@ -437,6 +439,8 @@ function set_prompt_PS1(){
     export PS1+='$( print_patriotic "$( short_uname )" "@$( short_hostname )" ":$( short_cwd )" )';
   elif [[ $PS1_TYPE = "FULL_LINE_OVERFLOWS" ]]; then
     export PS1+='$( long_ass_prompt )\n'; 
+  elif [[ $PS1_TYPE = "contegix" ]]; then
+    export PS1+='$( contegix )';
   else 
     export PS1='';
   fi;
