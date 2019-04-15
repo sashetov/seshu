@@ -1,0 +1,16 @@
+#!/srv/data/altpython/venvs/3.6.1-generic/bin/python
+import pandas as pd
+from datetime import datetime
+import csv
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+headers = ['Date','Description','Amount','Running Balance' ]
+df = pd.read_csv('stmt.csv',names=headers)
+print(df)
+df['Date'] = df['Date'].map(lambda x: datetime.strptime(str(x), '%m/%d/%Y'))
+x = df['Date']
+y = df['Running Balance']
+plt.plot(x,y)
+plt.ylim(bottom=0)
+plt.gcf().autofmt_xdate()
+plt.show()

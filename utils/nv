@@ -1,0 +1,56 @@
+#!/bin/bash
+function killall_pids_in_mount(){
+  export PIDS=$( lsof $MD | grep -v PID | awk '{print $2;}' | sort -n | uniq );
+  kill -9 $PIDS
+}
+function force_umount_sshfs(){
+  killall_pids_in_mount;
+  sudo fusermount -u $MD;
+}
+function do_mount(){
+  sshfs $RU@$RH:$RD $MD;
+}
+function check_mounts_count(){
+  mount | grep sshfs | grep $MD | wc -l
+}
+function ensure_sshfs(){
+  [ $(check_mounts_count) -eq 1 ] || do_mount;
+}
+function ee(){
+  echo $*;
+  eval $*
+}
+function __main__(){
+  export PC='plv';
+  export RU='sashetov'; #remote user
+  export MD='/srv/videos/'; #local mount dir
+  export RH='proxmox'; #remote host
+  export RD="/srv/data/videos/"; #remote vid dir
+  export SN='VIDS'; #tmux session
+  export SS='v'; #window name prefix
+  export N=''; # window number
+  if [ -e $1 ]; then N=1; else N=$1; fi;
+  C='tmux lsw -t $SN 2>&1'
+  ee $C
+  let FROM=$( tmux lsw -t $SN | wc -l );
+  if [ $FROM -eq 0 ]; then
+    let FROM=1;
+    export CMD='tmux new-session -d -c "'${PD}'" -s "'${SN}'"';
+    ee $CMD
+  fi;
+  let TO=$(( $FROM + $N -1 ))
+  echo $FROM $TO
+  for I in $( seq $FROM $TO ); do 
+    if [ $I -lt 10 ]; then
+      export N="0$I";
+    else 
+      export N="$I";
+    fi;
+    export CMD="";
+    export WN="${SS}${N}";
+    ensure_sshfs || exit 1;
+    export CMD1='tmux new-window -c "'$PD'" -n "'${WN}'" -t "'${SN}:${I}'" "'$PC'"';
+    ee $CMD1
+  done;
+}
+__main__ $*;

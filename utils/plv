@@ -1,0 +1,13 @@
+#!/bin/bash
+function pv(){
+  export D=$1;
+  export V=$2;
+  export L=$3;
+  export S=$4;
+  playvids -r -v"$V" -S"$S" -L"$L" -p"$D"
+}
+function __main__(){
+  export VD="/srv/videos";
+  pv "$VD" "0" "0" "1";
+}
+__main__ $*;
