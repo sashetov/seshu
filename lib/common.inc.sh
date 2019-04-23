@@ -45,20 +45,24 @@ function logdo() {
         else 
           echo $*   2>$STDERR_LOG >$STDOUT_LOG;
           eval "$*" 2>>$STDERR_LOG >>$STDOUT_LOG;
-        fi
-      else
-        if [ -n "$LOG_TO_SYSLOG" ]; then
-          echo $*   | logger -i -t "${SN}" &>/dev/null;
-          eval "$*" | logger -i -t "${SN}" &>/dev/null;
-        else
-          echo  $* ;
-          eval "$*";
-        fi
-      fi;
-    }
-  function print_and_do() {
-    logdo $*;
-  }
+    fi
+  else
+    if [ -n "$LOG_TO_SYSLOG" ]; then
+      echo $*   | logger -i -t "${SN}" &>/dev/null;
+      eval "$*" | logger -i -t "${SN}" &>/dev/null;
+    else
+      echo  $* ;
+      eval "$*";
+    fi
+  fi
+}
+function print_and_do() {
+  logdo $*;
+}
+function ee(){
+  echo $*;
+  eval $*;
+}
 function padl() {
   print_and_do $*;
 }

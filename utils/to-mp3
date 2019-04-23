@@ -28,15 +28,18 @@ function clean_convert(){
   export BASE_CLEAN_F=$( echo "${BASE_F}" | sed -e 's/\(.*\)/\L\1/' | sed -r 's/\s+/ /g' | sed -r 's/[^a-z0-9]/-/g' | sed -r 's/'\."${FT}"'//g' | sed -r 's/\-+/\-/g' | sed -r 's/-$//g'; );
   export CLEAN_F="${BASE_CLEAN_F}.${FT}";
   export OF="${BASE_CLEAN_F}.${OFT}";
-  padl "[ -f '${CLEAN_F}' ] && rm -f '${CLEAN_F}'; [ -f '${OF}' ] && rm -f '${OF}'; [ ! -d '${MP3_MD}' ] && mkdir -p '${MP3_MD}'; "
-  export MVC='mv "${IF}" "${CLEAN_F}"'
-  echo $MVC && eval $MVC;
-  padl "ffmpeg ${FFXO} -i '${CLEAN_F}' '${MP3_MD}/${OF}';";
-  if [[ -n "${VID_MD}" ]]; then
-    padl "[ ! -d ${VID_MD} ] && mkdir -p ${VID_MD};"
-    padl "mv '${CLEAN_F}' '${VID_MD}/${CLEAN_F}';";
+  ee "[ -f '${CLEAN_F}' ] && rm -f '${CLEAN_F}'; [ -f '${OF}' ] && rm -f '${OF}'; [ ! -d '${MP3_MD}' ] && mkdir -p '${MP3_MD}'; "
+  ee 'mv "${IF}" "${CLEAN_F}"';
+  if [ $FT != "$OFT" ]; then 
+    ee "ffmpeg ${FFXO} -i '${CLEAN_F}' '${MP3_MD}/${OF}';";
+    if [[ -n "${VID_MD}" ]]; then
+        ee "[ ! -d ${VID_MD} ] && mkdir -p ${VID_MD};"
+        ee "mv '${CLEAN_F}' '${VID_MD}/${CLEAN_F}';";
+    else
+      ee "rm -f ${CLEAN_F}";
+    fi;
   else
-    padl "rm -f ${CLEAN_F}";
+    ee 'mv "${CLEAN_F}" "${MP3_MD}/"'
   fi;
   stop_xtrace;
 }
@@ -57,7 +60,8 @@ function to_mp3_youtube() {
   export MP3_YD="$MP3_D/$Y/";
   export MP3_MD="$MP3_YD/$M/";
   for FT in $IFTS; do
-    find "$SRC/" -name "*.$FT" -maxdepth 1 -print0 2>/dev/null | while IFS=' ' read -r -d '' IF; do 
+    find "$SRC/" -name "*.$FT" -maxdepth 1 -print0 2>/dev/null | \
+      while IFS=' ' read -r -d '' IF; do 
       clean_convert;
     done;
   done;
@@ -69,7 +73,7 @@ function __main__(){
   start_xtrace
   export MIN=2;
   export MAX=3;
-  export IFTS="mp4 opus m4a ogg webm 3gp";
+  export IFTS="mp4 opus m4a ogg webm 3gp mkv mp3";
   export OFT="mp3";
   export FFXO=""; #"-loglevel verbose -benchmark_all -stats -qphist -debug_ts"
   export LOG_TO_SYSLOG='';

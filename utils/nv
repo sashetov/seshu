@@ -1,17 +1,21 @@
 #!/bin/bash
+function include_common(){
+  export USERBIN_LIB="${HOME}/bin/lib/common.inc.sh";
+  . "$USERBIN_LIB";
+}
 function killall_pids_in_mount(){
   export PIDS=$( lsof $MD | grep -v PID | awk '{print $2;}' | sort -n | uniq );
   kill -9 $PIDS
 }
 function force_umount_sshfs(){
   killall_pids_in_mount;
-  sudo fusermount -u $MD;
+  ee "sudo fusermount -u $MD";
 }
 function do_mount(){
-  sshfs $RU@$RH:$RD $MD;
+  ee "sshfs -o uid=1000 $RU@$RH:$RD $MD";
 }
 function check_mounts_count(){
-  mount | grep sshfs | grep $MD | wc -l
+  mount | grep sshfs | wc -l
 }
 function ensure_sshfs(){
   [ $(check_mounts_count) -eq 1 ] || do_mount;
@@ -21,6 +25,8 @@ function ee(){
   eval $*
 }
 function __main__(){
+  #set -x
+  include_common
   export PC='plv';
   export RU='sashetov'; #remote user
   export MD='/srv/videos/'; #local mount dir
@@ -52,5 +58,6 @@ function __main__(){
     export CMD1='tmux new-window -c "'$PD'" -n "'${WN}'" -t "'${SN}:${I}'" "'$PC'"';
     ee $CMD1
   done;
+  #set +x
 }
 __main__ $*;
