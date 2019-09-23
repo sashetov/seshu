@@ -1,0 +1,42 @@
+#!/bin/bash
+function include_common(){ # includes common.inc.sh
+  SCRIPT_ROOT=$( dirname $( dirname $(readlink -f "$0") ) );
+  export USERBIN_LIB="${SCRIPT_ROOT}/lib/common.inc.sh";
+  . "$USERBIN_LIB"
+}
+function print_help(){
+  export SN=$( basename $0 )
+  export SPACER="";
+  if [[ $# -gt 0 ]]; then 
+    note_to_stdout 'DESCRIPTION' '%s looks for all files in all subpaths of search_dir/ and renames the files to "${sha256sum_of_file}.${ext}" where ext is the extension of the file, should it have one \n' "$SN";
+    err_to_stderr 'INVALID INVOCATION:\n'
+    printf '%s %s\n\n' $SN "$*";
+  fi;
+  note_to_stdout 'USAGE' '%s (search_dir)\n' "$SN";
+  printf '    (search_dir)  where to look (working path is used if none is provided)\n';
+  note_to_stdout 'NOTE' '%s options in "()" are OPTIONAL\n\n' '-';
+}
+function mvallsha256() {
+  if [ $# -gt 1 ]; then print_help $*;
+  elif [ $# -eq 1 ]; then export D="${1}"; fi;
+  if [ ! -d $D ]; then 
+    warn_to_stdout " no such directory ${D}\n";
+  fi;
+  \find -P ${D} -maxdepth 1 -type f 2>/dev/null | while read F; do
+    export FD=$( readlink -f $( dirname $F ) ); #full dirpath to file
+    export E=$( echo $F | sed -r 's/\./\n/g' | tail -n 1 );
+    export S=$( sha256sum $F 2> /dev/null | awk '{ print $1 }' );
+    if [ -z "$E" ]; then export N="${S}"; else export N="${S}.${E}"; fi;
+    export CMD='mv "'"${F}"'" "'"${N}"'"';
+    padl $CMD;
+  done;
+}
+function __main__(){
+  include_common
+  let DEBUG=0; #defaults
+  start_xtrace
+  export D=$( readlink -f . );
+  mvallsha256 $*
+  stop_xtrace
+}
+__main__ $*

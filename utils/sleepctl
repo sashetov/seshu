@@ -1,0 +1,24 @@
+#!/bin/bash
+function usage(){
+  printf 'Usage: %s ACTION\n\tACTION : {on|off}\n' "$0";
+}
+function ee(){
+  echo $*;
+  eval $*;
+}
+function sleepctl(){
+  if [ $# -lt 1 ]; then 
+    usage; exit 1;
+  fi
+  A=$1;
+  if [[ $A == "on" ]]; then 
+    ee "sudo systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target";
+    ee "gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout '1' && gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout '1'"
+  elif [[ $A == "off" ]]; then 
+    ee "sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target";
+    ee "gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout '0' && gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout '0'"
+  else
+    usage; exit 2;
+  fi;
+}
+sleepctl $*;
