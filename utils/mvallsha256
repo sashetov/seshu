@@ -31,6 +31,9 @@ function mvallsha256() {
     padl $CMD;
   done;
 }
+function mvs256lastn() {
+  N=$1; ls -1tr | tail -n$N | while read i; do mvallsha256 $i; done;
+}
 function __main__(){
   include_common
   let DEBUG=0; #defaults

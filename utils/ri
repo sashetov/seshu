@@ -1,0 +1,108 @@
+#!/bin/bash
+RIMAGES_PROBABILITY=100
+PIX_PER_COL=4
+PIX_PER_ROW=$(echo $PIX_PER_COL*2|bc)
+BURST=1
+SLEEPTIME=0.1
+function is_numeric() {
+  CODE=$1;
+  IS_NUMERIC=1
+  if [[ -z $CODE ]]; then
+    return 1;
+  fi;
+  NUM_CHARS_NON_NUMERIC=$( printf -- '%b' "${CODE}" | sed -r 's/^-?[0-9]+//g' | wc -c );
+  [[ $NUM_CHARS_NON_NUMERIC -eq 0 && -n $NUM_CHARS_NON_NUMERIC ]]
+  return $?
+}
+function display_rand_img {
+  p=$RIMAGES_PROBABILITY; # make it rare-ish
+  PICS_DIR=$1
+  export LINES=$(tput lines)
+  export COLUMNS=$(tput cols)
+  export maxw=$(echo $COLUMNS*$PIX_PER_COL|bc)
+  export maxh=$(echo $LINES*$PIX_PER_ROW|bc)
+  export draw=$(python -c 'import random; DRAW=random.randint(0,100); print(DRAW)' 2>/dev/null);
+  if [ $draw -lt $p ]; then {
+    export img=$( find ${PICS_DIR} -type f | egrep -v ' |svg' | shuf | head -n 1 );
+    export wh=$(file $img 2>&1 | sed -r 's/.* ([0-9]{1,})\s*x\s*([0-9]+).*/\1x\2/g');
+    export w=$( echo $wh | cut -d x -f 1 );
+    export h=$( echo $wh | cut -d x -f 2 ); 
+    #echo maxw $maxw maxh $maxh 
+    #echo w $w h $h
+    if is_numeric $w && is_numeric $h ; then
+      if [ $w -gt $maxw ] || [ $h -gt $maxh ] ; then 
+        if [ $w -gt $maxw ]; then
+            export w2=$maxw;
+            export ar=$(python -c "print($w2*1.000/$w)" 2>/dev/null);
+            export h=$(python -c "print(int(round($h*1.00*($ar))))" 2>/dev/null)
+            export w=$w2
+        fi
+        #echo w $w h $h
+        if [ $h -gt $maxh ]; then
+            export h2=$maxh;
+            export ar=$(python -c "print($h2*1.000/$h)" 2>/dev/null);
+            export w=$(python -c "print(int(round($w*1.00*$ar)))" 2>/dev/null)
+            export h=$h2
+        fi
+        #echo w $w h $h
+      else
+        export w=0;
+        export h=0;
+      fi;
+    fi;
+    mwa=$(echo $maxw-$w|bc)
+    mha=$(echo $maxh-$h|bc)
+    #echo mwa $mwa mha $mha
+    export xywh=$( python -c "import random; x=random.randint(0,${mwa}); y=random.randint(0,${mha}); w=$w; h=$h; print('0;1;%d;%d;%d;%d' % (x,y,w,h))" 2>/dev/null );
+    echo -e $xywh";;;;;$img\n4;\n3;" | /usr/libexec/w3m/w3mimgdisplay 2>/dev/null;
+  }; fi;
+}
+function ri_on_key_input(){
+    tput clear      # clear the screen
+    while read line
+    do
+       let i=0;
+       while :; do 
+           tput cup 0 0   # Move cursor to screen location X,Y (top left is 0,0)
+           if [ $i -lt $BURST ]; then
+             display_rand_img .
+           else 
+               break
+           fi
+       let i++
+       done;
+    done < "${1:-/dev/stdin}"
+}
+function ri_forever(){
+    tput clear      # clear the screen
+    while :; do
+        sleep $SLEEPTIME;
+        tput cup 0 0   # Move cursor to screen location X,Y (top left is 0,0)
+        display_rand_img .
+    done;
+}
+function main(){
+    POSITIONAL=()
+    AUTO=false
+    while [[ $# -gt 0 ]]
+    do
+        key="$1"
+        case $key in
+            -a|--auto)
+            AUTO="true"
+            if [[ $# -gt 1 ]]; then
+                SLEEPTIME=$2
+            fi;
+            shift
+            shift
+            ;;
+        esac
+    done
+    set -- "${POSITIONAL[@]}"
+    if [ $AUTO == "true" ]; then
+        ri_forever
+    else
+        ri_on_key_input
+    fi
+}
+main $@

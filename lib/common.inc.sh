@@ -45,26 +45,26 @@ function logdo() {
         else 
           echo $*   2>$STDERR_LOG >$STDOUT_LOG;
           eval "$*" 2>>$STDERR_LOG >>$STDOUT_LOG;
-    fi
-  else
-    if [ -n "$LOG_TO_SYSLOG" ]; then
-      echo $*   | logger -i -t "${SN}" &>/dev/null;
-      eval "$*" | logger -i -t "${SN}" &>/dev/null;
-    else
-      echo  $* ;
-      eval "$*";
-    fi
-  fi
-}
+        fi
+      else
+        if [ -n "$LOG_TO_SYSLOG" ]; then
+          echo $*   | logger -i -t "${SN}" &>/dev/null;
+          eval "$*" | logger -i -t "${SN}" &>/dev/null;
+        else
+          echo  $* ;
+          eval "$*";
+        fi
+      fi;
+    }
 function print_and_do() {
-  logdo $*;
+    logdo $*;
+}
+function padl() {
+  print_and_do $*;
 }
 function ee(){
   echo $*;
   eval $*;
-}
-function padl() {
-  print_and_do $*;
 }
 function start_xtrace() {
   if [[ $DEBUG == 1 ]]; then {
@@ -332,26 +332,44 @@ function search_with_qs(){
 }
 function display_rand_img {                                                   #/dev/fb*
   p=$RIMAGES_PROBABILITY; # make it rare-ish
-  maxw=$COLUMNS
-  maxh=$LINES
-  draw=$(python -c 'import random; DRAW=random.randint(0,100); print(DRAW)');
-  if [ $draw -lt $p ]; then { #echo draw$draw >> /tmp/t
+  export LINES=$(tput lines)
+  export COLUMNS=$(tput cols)
+  export maxw=$(echo $COLUMNS*$PIX_PER_COL|bc)
+  export maxh=$(echo $LINES*$PIX_PER_ROW|bc)
+  export draw=$(python -c 'import random; DRAW=random.randint(0,100); print(DRAW)' 2>/dev/null);
+  if [ $draw -lt $p ]; then {
     export img=$( find ${PICS_DIR} -type f | egrep -v ' |svg' | shuf | head -n 1 );
     export wh=$(file $img 2>&1 | sed -r 's/.* ([0-9]{1,})\s*x\s*([0-9]+).*/\1x\2/g');
     export w=$( echo $wh | cut -d x -f 1 );
-    export h=$( echo $wh | cut -d x -f 2 ); #echo w:$w h:$h mw:$maxw mh:$maxh>> /tmp/t;
+    export h=$( echo $wh | cut -d x -f 2 ); 
+    #echo maxw $maxw maxh $maxh 
+    #echo w $w h $h
     if is_numeric $w && is_numeric $h ; then
       if [ $w -gt $maxw ] || [ $h -gt $maxh ] ; then 
-        export ar=$(python -c "print($w*1.000/$h)");
-        export w=$maxw;
-        export h=$(python -c "print($w*1.00/$ar)")
+        if [ $w -gt $maxw ]; then
+            export w2=$maxw;
+            export ar=$(python -c "print($w2*1.000/$w)" 2>/dev/null);
+            export h=$(python -c "print(int(round($h*1.00*($ar))))" 2>/dev/null)
+            export w=$w2
+        fi
+        #echo w $w h $h
+        if [ $h -gt $maxh ]; then
+            export h2=$maxh;
+            export ar=$(python -c "print($h2*1.000/$h)" 2>/dev/null);
+            export w=$(python -c "print(int(round($w*1.00*$ar)))" 2>/dev/null)
+            export h=$h2
+        fi
+        #echo w $w h $h
       else
         export w=0;
         export h=0;
       fi;
     fi;
-    export xywl=$( python -c "import random; x=random.randint(0,1280); y=random.randint(0,960); w=$w; h=$h; print('0;1;%d;%d;%d;%d' % (x,y,w,h))" );
-    echo -e $xywl";;;;;$img\n4;\n3;" | /usr/libexec/w3m/w3mimgdisplay;
+    mwa=$(echo $maxw-$w|bc)
+    mha=$(echo $maxh-$h|bc)
+    #echo mwa $mwa mha $mha
+    export xywh=$( python -c "import random; x=random.randint(0,${mwa}); y=random.randint(0,${mha}); w=$w; h=$h; print('0;1;%d;%d;%d;%d' % (x,y,w,h))" 2>/dev/null );
+    echo -e $xywh";;;;;$img\n4;\n3;" | /usr/libexec/w3m/w3mimgdisplay 2>/dev/null;
   }; fi;
 }
 function parse_git_branch() {                                                 #PS1
@@ -390,8 +408,8 @@ function normal_prompt(){
 function prompt_dtcwd(){
   echo -ne "\e[$( date +%T )\e[m\e[4;40;36m$( date +%D%Z )\e[m\e[1;40;37m$( short_cwd )\e[m";
 }
-function contegix(){
-  echo -ne "avassilevski ";
+function work_prompt(){
+  echo -ne "avassilevski $(datets_print) ";
 }
 function long_ass_prompt(){
   MYUSER="$(whoami)"                        && export MYUSER;
@@ -443,8 +461,8 @@ function set_prompt_PS1(){
     export PS1+='$( print_patriotic "$( short_uname )" "@$( short_hostname )" ":$( short_cwd )" )';
   elif [[ $PS1_TYPE = "FULL_LINE_OVERFLOWS" ]]; then
     export PS1+='$( long_ass_prompt )\n'; 
-  elif [[ $PS1_TYPE = "contegix" ]]; then
-    export PS1+='$( contegix )';
+  elif [[ $PS1_TYPE = "work_prompt" ]]; then
+    export PS1+='$( work_prompt)';
   else 
     export PS1='';
   fi;

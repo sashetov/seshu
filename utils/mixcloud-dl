@@ -1,0 +1,187 @@
+#!/bin/env python3
+"""
+downloads a mix from mixcloud page url
+"""
+import json
+import requests
+import sys
+import math
+import os
+from os import path
+import glob
+import shutil
+import fcntl
+WORKDIR_PRE="./.mc_work"
+DASH2_URL_PRE="https://audio6.mixcloud.com/secure/dash2/"
+FRAG_LEN=10
+def make_workdir(username,mix):
+    workdir=f"{WORKDIR_PRE}_{username}_{mix}"
+    try:
+        os.mkdir(workdir)
+    except FileExistsError:
+        pass
+    except Exception as error:
+        print(f"ERR: {error}")
+        return False
+    return workdir
+def delete_workdir(workdir_path):
+    """
+    recursively deletes a dir
+    """
+    try:
+        shutil.rmtree(workdir_path)
+    except Exception as error:
+        print(f"ERR: {error}")
+        return False
+    return True
+def get_sess_cookies(sess,url):
+    """
+    gets a url's cookies with get request with session
+    """
+    sess.get(url)
+    return sess.cookies.get_dict()
+def mc_graphql_get_data(sess, csrftoken, sess_cookies, url, username, mix):
+    mc_graphql_url="https://www.mixcloud.com/graphql"
+    req_headers = {
+        "Content-Type"  : "application/json",
+        "X-CSRFToken"   : csrftoken,
+        "Referer"       : url
+    }
+    query = {
+        "query" : """
+        query CloudcastHeader($vars:CloudcastLookup!) {
+            cloudcastLookup(lookup:$vars) {id,...F2}
+        }
+        fragment F0 on Cloudcast {id,waveformUrl,audioLength,isPlayable}
+        fragment F1 on Cloudcast {id,name,slug,owner {username,id}}
+        fragment F2 on Cloudcast {id,owner {id},...F0,...F1}
+        """,
+        "variables": {
+            "vars": {
+                "username" : username,
+                "slug" : mix
+            }
+        }
+    }
+    res = sess.post(mc_graphql_url, headers=req_headers, cookies = sess_cookies, json=query)
+    if res.status_code != 200:
+        print(f"BAD STATUS: {res.status_code} for url {mc_graphql_url}")
+        print(json.dumps(res.json(),indent=1))
+        return False
+    res = res.json()
+    return res
+def download_url_content(url):
+    """
+    downloads binary content from url, streaming it
+    returns data or False
+    """
+    res = requests.get(url, timeout=30, stream=True)
+    if res.status_code != 200:
+        print(f"BAD STATUS: {res.status_code} for url {url}")
+        return False
+    content = res.content
+    return content
+def download_url_to_path(url, path):
+    """
+    downloads binary content from url, streaming it
+    writes content to path
+    """
+    res = requests.get(url, timeout=30, stream=True)
+    if res.status_code != 200:
+        print(f"BAD STATUS: {res.status_code} for url {url}")
+        return False
+    content = res.content
+    f = open(path, "wb", 1)
+    fcntl.flock(f, fcntl.LOCK_EX)
+    f.write(content)
+    fcntl.flock(f, fcntl.LOCK_UN)
+    f.close()
+    return True
+def cat(outfile, *from_files):
+    """
+    binary appends from_files to outfile similar to
+    $ cat a b c d > oufile
+    <=>
+    cat("outfile", "a", "b", "c", "d")
+    """
+    f = open(outfile, "wb+")
+    for from_filename in from_files:
+        with open(from_filename,"rb") as from_file:
+            f.write(from_file.read())
+def mc_dl_mp4(gql_res,username,mix):
+    """
+    makes a workdir and starts downloading the waveform parts every 2 seconds
+    joins them together into an mp4 file after each is downloaded
+    cleans up after itself when done or on exception
+    """
+    mkdir_status = make_workdir(username,mix)
+    if not mkdir_status:
+        return 1
+    workdir = mkdir_status
+    mp4_filename = f"./{username}--{mix}.mp4"
+    waveform_url = gql_res["data"]["cloudcastLookup"]["waveformUrl"]
+    audio_length = int(gql_res["data"]["cloudcastLookup"]["audioLength"])
+    wf_path = waveform_url.split('.json')[0][30:]
+    num_frags = math.ceil(audio_length / FRAG_LEN) + 10 # add a couple of extra possible frags for buffer JIC
+    mp4_url_pre = f"{DASH2_URL_PRE}/{wf_path}.m4a"
+    init_fname="init-a1-x3.mp4"
+    mp4_url= f"{mp4_url_pre}/{init_fname}"
+    init_out=f"{workdir}/0-{init_fname}"
+    if not path.exists(init_out):
+        init_dl_status = download_url_to_path(mp4_url, init_out)
+        if not init_dl_status:
+            print(f"failed: {init_out}")
+            return 1
+    print(f"started: {init_out}")
+    try:
+        i = 1
+        while i < num_frags:
+            frag_fname=f"fragment-{i}-a1-x3.m4s"
+            mp4_url= f"{mp4_url_pre}/{frag_fname}"
+            frag_out=f"{workdir}/{frag_fname}"
+            if path.exists(frag_out):
+                print(f"fragment_exists: {frag_out} {i}/{num_frags}")
+                i+=1
+                continue
+            frag_dl_status = download_url_to_path(mp4_url, frag_out)
+            if not frag_dl_status:
+                print(f"failed frag dl {i}/{num_frags}")
+                break # must be done...
+            print(f"fragment_done: {frag_out} {i}/{num_frags}")
+            i+=1
+    except KeyboardInterrupt:
+        pass
+    mp4_frags = list(glob.glob(f"{workdir}"+"/*"))
+    mp4_frags.sort()
+    cat(mp4_filename,*mp4_frags)
+    delete_status = delete_workdir(workdir)
+    if not delete_status:
+        return 2
+    return 0
+def main():
+    """
+    entry point for program
+    processes args ( URL )
+    """
+    prog_name = sys.argv[0]
+    args = sys.argv[1:]
+    argc = len(args)
+    if argc < 1:
+        print(f"USAGE:{prog_name} MIXCLOUD_URL")
+        exit(1)
+    url = args[0]
+    url_parts = url.split("/")
+    username = url_parts[3]
+    mix = url_parts[4]
+    url = "/".join(url_parts[0:5]) + "/"# get rid of anything after mix name
+    url = url.encode('utf-8')
+    sess = requests.Session()
+    sess_cookies = get_sess_cookies(sess,url)
+    csrftoken = sess_cookies["csrftoken"]
+    gql_res = mc_graphql_get_data(sess, csrftoken, sess_cookies, url, username, mix) #print(json.dumps(gql_res,indent=2))
+    print(json.dumps(gql_res,indent=1))
+    if not gql_res:
+        exit(1)
+    exit(mc_dl_mp4(gql_res, username, mix))
+if __name__ == "__main__":
+    main()

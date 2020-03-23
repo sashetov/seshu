@@ -60,4 +60,3 @@ alias lt='l -Str';
 alias lh='l -thSr';
 alias man='manwrapper';
 alias parole='kpcli --kdb "$HOME/keys/kee-parole.kdbx"';
-#alias screen='script-wrapper screen';

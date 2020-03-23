@@ -1,0 +1,16 @@
+#!/bin/bash
+function ee(){
+    echo "$@"
+    eval "$@"
+}
+function rename_clean(){
+    export IF="$@"
+    export FT=$(echo $IF | sed -r 's/^.+\.([^.]+)$/\L\1/g')
+    export BASE_F=$( basename "${IF}"; );
+    export F_PATH=$(eval 'readlink -f "$IF"')
+    export DIR_F=$(dirname "$F_PATH");
+    export BASE_CLEAN_F=$( echo "${BASE_F}" | unidecode | sed -e 's/\(.*\)/\L\1/' | sed -r 's/\s+/ /g' | sed -r 's/[^a-z0-9]/-/g' | sed -r 's/'\."${FT}"'//g' | sed -r 's/\-+/\-/g' | sed -r 's/-$//g'; );
+    export CLEAN_F="${BASE_CLEAN_F}.${FT}";
+    ee "mv '$IF' '$DIR_F/$CLEAN_F'"
+}
+rename_clean "$@"
