@@ -60,3 +60,4 @@ alias lt='l -Str';
 alias lh='l -thSr';
 alias man='manwrapper';
 alias parole='kpcli --kdb "$HOME/keys/kee-parole.kdbx"';
+alias sshvpn='sudo sshuttle -r avassi@192.168.0.10 0.0.0.0/0 -vv --dns'

@@ -1,0 +1,171 @@
+#!/srv/data/altpython/venvs/3.6.1-generic/bin/python
+"""
+reads every line from multiple csv files containing bank balance data
+groups by date and sums all balances at every distinct date
+to create combined file containing the total in both accounts
+writes out combined file to csv
+"""
+import re
+import json
+import csv
+from datetime import datetime
+
+
+def get_formatted_line(line, is_csv, csv_delim, cleanup_rex):
+    """
+    named helper func to split line conditionally
+    """
+    if cleanup_rex:
+        line = re.sub(cleanup_rex, '', line)
+    return line.split(csv_delim) if is_csv  else line
+
+
+def read_file_lines(file_name, filter_rex=None, is_csv=False):
+    """
+    returns list of lines
+    """
+    file_handler = open(file_name, 'r')
+    lines = file_handler.readlines()
+    filtered_lines = []
+    for line in lines:
+        if filter_rex and len(re.findall(filter_rex, line)) != 0:
+            filtered_lines.append(line)
+        elif not filter_rex:
+            filtered_lines.append(line)
+    if is_csv:
+        filered_lines = list(csv.reader(filtered_lines))
+    return filered_lines
+
+
+def jsonpp_str(thing):
+    """
+    pretty prints thing in json format
+    """
+    return json.dumps(thing, indent=1, default=str, sort_keys=True)
+
+
+def extract_stmts(bank_stmts):
+    """
+    parses statements into DOLOL looking like:
+    {filename : [[date,trans,trans_usd,stmt_running_total],...[..]],..}
+    and returns it
+    """
+    rex = "^[0-9]"  # used to find the relevant lines in stmt
+    extracted_stmts = {}
+    for filename in bank_stmts:
+        extracted_stmts[filename] = read_file_lines(filename, rex, 1)
+    return extracted_stmts
+
+
+def get_distrinct_dates(extracted_stmts):
+    """
+    goes through each extracted statement's transactions and returns a DODOL
+    ( dict of dicts of lists) with format:
+    { date_str : {filename : [tid,tid2..] ...}, date_str2 : {...} ...}
+    of all the distinct dates
+    """
+    dates = {}
+    for filename in extracted_stmts:
+        stmt = extracted_stmts[filename]
+        i = 0
+        for transaction in stmt:
+            date_str = transaction[0]
+            if date_str not in dates:
+                dates[date_str] = {}
+            if filename not in dates[date_str]:
+                dates[date_str][filename] = []
+            dates[date_str][filename].append(i)
+            i += 1
+    return dates
+
+
+def get_combined_transactions(extracted_stmts):
+    """
+    goes through each distinct date in each statement
+    and adds up the totals at that point, creating a new statement LOL
+    ( list of lists ) that contains the date, the concatenation of the
+    transaction descriptions for that date, the sum of the deltas and the
+    total sum for that day and returns it
+    """
+    distinct_dates = get_distrinct_dates(extracted_stmts)
+    print("distinct_dates :", distinct_dates)
+    combined_stmt = []
+    for date in distinct_dates:
+        file_indexes = distinct_dates[date]
+        new_trans = []
+        for filename in file_indexes:
+            trans_ixes = file_indexes[filename]
+            for trans_ix in trans_ixes:
+                trans = extracted_stmts[filename][trans_ix]
+                print(trans)
+                if len(new_trans) == 0:
+                    new_trans = trans
+                    if new_trans[2] == '':
+                        new_trans[2] = 0
+                    new_trans[1] = re.sub(r',', '', new_trans[1])
+                    new_trans[2] = float(new_trans[2])
+                    new_trans[3] = float(
+                        re.sub(r'[^0-9\.]+', '', new_trans[3]))
+                    print(new_trans)
+                else:
+                    if trans[2] == '':
+                        trans[2] = 0
+                    trans[1] = re.sub(r',', '', trans[1])
+                    trans[2] = float(trans[2])
+                    trans[3] = float(re.sub(r'[^0-9\.]+', '', trans[3]))
+                    new_trans[1] += trans[1]  # Description
+                    new_trans[2] = round(
+                        float(new_trans[2]) +
+                        float(trans[2]), 2)  # Amount
+                    new_trans[3] = round(
+                        float(new_trans[3]) +
+                        float(trans[3]), 2)  # Running Total
+                    print(new_trans)
+        combined_stmt.append(new_trans)
+    combined_stmt.sort(key=lambda x: datetime
+                       .strptime(str(x[0]), '%m/%d/%Y').strftime("%Y%m%d"))
+    print(combined_stmt)
+    resummed_statment = []
+    i = 0
+    running_total = 0
+    while i < len(combined_stmt):
+        running_total += combined_stmt[i][2]
+        resummed_statment.append([
+            combined_stmt[i][0],
+            combined_stmt[i][1],
+            combined_stmt[i][2],
+            running_total])
+        i += 1
+    return resummed_statment
+
+
+def write_stmt_to_file(stmt, outfile, headers=None):
+    """
+    writes header if given and then all the lines of the statment
+    """
+    with open(outfile, 'w+') as file_handler:
+        if headers:
+            file_handler.write(
+                '{}\n'.format(",".join(str(e) for e in headers)))
+        for trans in stmt:
+            file_handler.write(
+                '{}\n'.format(",".join(str(e) for e in trans)))
+    file_handler.close()
+
+
+def main():
+    """
+    main function
+    """
+    # headers = ['Date', 'Description', 'Amount', 'Running Balance']
+    out_stmt_file = "stmt.csv"
+    bank_stmts = ["stmt_checking.csv", "stmt_savings.csv"]
+    extracted_stmts = extract_stmts(bank_stmts)
+    print("combined_stmt: ", extracted_stmts)
+    combined_stmt = get_combined_transactions(extracted_stmts)
+    print("combined_stmt: ", jsonpp_str(combined_stmt))
+    write_stmt_to_file(combined_stmt, out_stmt_file)  #, headers)
+
+
+if __name__ == "__main__":
+    main()

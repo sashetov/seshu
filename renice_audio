@@ -1,0 +1,5 @@
+#!/bin/bash
+sudo renice -n -15 $(pgrep mplayer)
+sudo ionice -c 1 -p $(pgrep mplayer)
+sudo renice -n -19 $(pgrep pulseaudio)
+sudo ionice -c 1 -p $(pgrep pulseaudio)
