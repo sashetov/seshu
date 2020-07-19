@@ -1,4 +1,4 @@
-#!/srv/data/altpython/venvs/3.6.1-generic/bin/python
+#!/usr/bin/env python
 import pandas as pd
 from datetime import datetime
 import csv
@@ -12,5 +12,6 @@ x = df['Date']
 y = df['Running Balance']
 plt.plot(x,y)
 plt.ylim(bottom=0)
+#plt.xlim(left=0)
 plt.gcf().autofmt_xdate()
 plt.show()

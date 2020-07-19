@@ -1,0 +1,8 @@
+#!/bin/bash
+sudo dnf groupinstall "Development Tools"
+sudo dnf install libglvnd-devel
+sudo grub2-editenv - set "$(sudo grub2-editenv - list | grep kernelopts) nouveau.modeset=0"
+sudo  systemctl isolate multi-user.target
+wget https://download.nvidia.com/XFree86/Linux-x86_64/450.57/NVIDIA-Linux-x86_64-450.57.run
+sudo bash NVIDIA-Linux-x86_64-450.57.run
+sudo reboot

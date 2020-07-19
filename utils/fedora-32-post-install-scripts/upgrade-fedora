@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 NEXT_VERSION"
+  exit 0
+fi
+NEXT_VERSION=$1
+sudo dnf -y upgrade --refresh && \
+  sudo dnf -y install dnf-plugin-system-upgrade && \
+  sudo dnf -y system-upgrade download --releasever="${NEXT_VERSION}" && \
+  sudo dnf system-upgrade reboot
