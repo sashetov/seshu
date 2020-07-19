@@ -59,4 +59,4 @@
 [diff "bin"]
   textconv = hexdump -v -C
 [credential]
-	helper = store
+  helper = cache --timeout=36000 
