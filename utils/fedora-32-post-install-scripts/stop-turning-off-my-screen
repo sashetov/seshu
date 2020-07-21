@@ -1,0 +1,18 @@
+#!/bin/bash
+echo "stop-turning-off-my-screen v0.01"
+function get_gsets(){
+    echo org.gnome.desktop.session idle-delay $(gsettings get org.gnome.desktop.session idle-delay)
+    echo org.gnome.settings-daemon.plugins.power idle-dim $(gsettings get org.gnome.settings-daemon.plugins.power idle-dim)
+    echo org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout $(gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout)
+}
+function keep_screen_on(){
+    gsettings set org.gnome.desktop.session idle-delay 0
+    gsettings set org.gnome.settings-daemon.plugins.power idle-dim false
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
+}
+echo BEFORE:
+get_gsets
+echo FIXING..
+keep_screen_on
+echo AFTER:
+get_gsets
