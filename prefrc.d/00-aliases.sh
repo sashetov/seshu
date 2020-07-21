@@ -11,6 +11,8 @@ alias e='';
 alias E='';
 alias f='find';
 alias fbm='mplayer -nolirc -vo fbdev2:/dev/fb0 -vf scale=1250:-3';
+alias g='google-chrome'
+alias G='google'
 alias gl='git log -p --decorate --stat --dense --left-right --raw --full-history --cumulative'
 alias grep='grep -E';
 alias G='google';
@@ -60,4 +62,4 @@ alias lt='l -Str';
 alias lh='l -thSr';
 alias man='manwrapper';
 alias parole='kpcli --kdb "$HOME/keys/kee-parole.kdbx"';
-alias sshvpn='sudo sshuttle -r avassi@192.168.0.10 0.0.0.0/0 -vv --dns'
+alias sshvpn='sudo sshuttle -r avassi@192.168.0.10 0.0.0.0/0 -vv --dns --python=/usr/local/bin/python3'
