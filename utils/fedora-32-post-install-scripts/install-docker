@@ -1,0 +1,20 @@
+#!/bin/bash
+CGROUP1_STATUS=$(cat /proc/cmdline \
+    | grep systemd.unified_cgroup_hierarchy=0 \
+    | wc -l)
+if [ $CGROUP1_STATUS -eq 0 ]; then
+    cat <<E
+For this script work you will have to add this to bootloader's kernel cmdline:
+systemd.unified_cgroup_hierarchy=0
+E
+    exit 1;
+fi
+net-ipt-ensure-over-firewalld  #make sure no firewalld, only iptables
+sudo rpmkeys --import 'https://download.docker.com/linux/fedora/gpg'
+sudo dnf config-manager --add-repo 'https://download.docker.com/linux/fedora/docker-ce.repo'
+sudo dnf install --enablerepo=docker-ce-stable --releasever=31 docker-ce-cli docker-ce
+sudo usermod -aG docker $USER  # fix for Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get http://%2Fvar%2Frun%2Fdocker.sock/v1.40/containers/json: dial unix /var/run/docker.sock: connect: permission denied
+newgrp docker
+sudo systemctl enable docker
+sudo systemctl restart docker
+sudo docker run hello-world

@@ -409,7 +409,7 @@ function prompt_dtcwd(){
   echo -ne "\e[$( date +%T )\e[m\e[4;40;36m$( date +%D%Z )\e[m\e[1;40;37m$( short_cwd )\e[m";
 }
 function work_prompt(){
-  echo -ne "avassilevski $(datets_print) ";
+  echo -ne "$(datets_print) ";
 }
 function long_ass_prompt(){
   MYUSER="$(whoami)"                        && export MYUSER;
