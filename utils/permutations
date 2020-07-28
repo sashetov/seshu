@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import sys
+from math import factorial
+if len(sys.argv) - 1 < 2:
+    print("Usage {} n r".format(sys.argv[0]))
+    sys.exit(1)
+
+n = int(sys.argv[1])
+r = int(sys.argv[2])
+
+
+def perm(n, r):
+    """
+    computes the permutations of r selected elements out of n possible ones
+    """
+    return round(factorial(n)/factorial(r))
+
+
+print(n, r, perm(n, r))
