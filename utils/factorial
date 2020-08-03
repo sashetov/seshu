@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+import sys
+from math import factorial
+if len(sys.argv) - 1 < 1:
+    print("Usage {} n".format(sys.argv[0]))
+    sys.exit(1)
+n = int(sys.argv[1])
+print(factorial(n))

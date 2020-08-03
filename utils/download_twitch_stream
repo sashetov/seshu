@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+import sys
+import datetime
+from subprocess import Popen
+from time import sleep
+import streamlink
+
+
+def download_twitch_stream(stream_name, vid_length_secs):
+    """
+    download_twitch_stream stream_name, vid_length_secs
+    """
+    stream_url = streamlink \
+        .streams('https://www.twitch.tv/{}'.format(stream_name))['best'] \
+        .url  # stream url
+    print(stream_url)
+    human_ts = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    ffmpeg_process = Popen(  # use ffmpeg to write file in child
+        ["ffmpeg", "-i", stream_url, "-c", "copy",
+         '{}-{}-{}.mkv'.format(stream_name, human_ts, vid_length_secs)])
+    sleep(vid_length_secs)
+    ffmpeg_process.kill()  # kill the ffmpeg at specified time
+
+
+if __name__ == "__main__":
+    arc = len(sys.argv)-1
+    if arc < 2:
+        print("Usage: {} STREAM_NAME VID_LENGTH_SECS".format(sys.argv[0]))
+        sys.exit(1)
+    stream_name = sys.argv[1]
+    vid_length_secs = int(sys.argv[2])
+    download_twitch_stream(stream_name, vid_length_secs)

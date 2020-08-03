@@ -13,7 +13,7 @@ def perm(n, r):
     """
     computes the permutations of r selected elements out of n possible ones
     """
-    return round(factorial(n)/factorial(r))
+    return round(factorial(n)/factorial(n-r))
 
 
 print(n, r, perm(n, r))

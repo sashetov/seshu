@@ -1,17 +1,28 @@
-#!/usr/bin/env python
+#!/srv/data/altpython/venvs/3.6.1-generic/bin/python
 import pandas as pd
 from datetime import datetime
-import csv
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-headers = ['Date','Description','Amount','Running Balance' ]
-df = pd.read_csv('stmt.csv',names=headers)
-print(df)
-df['Date'] = df['Date'].map(lambda x: datetime.strptime(str(x), '%m/%d/%Y'))
-x = df['Date']
-y = df['Running Balance']
-plt.plot(x,y)
-plt.ylim(bottom=0)
-#plt.xlim(left=0)
-plt.gcf().autofmt_xdate()
-plt.show()
+
+
+def bank_plot(csv_file):
+    """
+    plots out a time series of dollars coming out of a csv file from a bank
+    such as BA
+    """
+    headers = ['Date', 'Description', 'Amount', 'Running Balance']
+    df = pd.read_csv(csv_file, names=headers)
+    df['Date'] = df['Date'].map(
+        lambda x: datetime.strptime(str(x), '%m/%d/%Y'))
+    print(df)
+    x = df['Date']
+    y = df['Running Balance']
+    plt.style.use('dark_background')
+    plt.plot(x, y, color='r')
+    # plt.ylim(bottom=0)
+    # plt.xlim(left=0)
+    plt.gcf().autofmt_xdate()
+    plt.show()
+
+
+if __name__ == "__main__":
+    bank_plot('stmt.csv')
