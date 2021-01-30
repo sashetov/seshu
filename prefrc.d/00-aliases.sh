@@ -25,7 +25,7 @@ alias j='journalctl -f';
 alias J='';
 alias k='krunner';
 alias K='';
-alias l='\ls  --time-style="+%Y%m%d%H%m%S" --group-directories-first --color=always -lAnFtr';
+alias l='\ls  --time-style="+%Y%m%d%H%M%S" --group-directories-first --color=always -lAnFtr';
 alias L='less -SRC';
 alias mp='mplayer';
 alias m='function pm() { mount | sed -r "s/(on|type)//g" | column -t --table-columns="NAME,MOUNTPOINT,TYPE,OPTS" -W "OPTS" -c 1000; }; pm | grep NAME; pm | grep -v NAME | sort -k 3,3 -r;'
@@ -63,3 +63,5 @@ alias lh='l -thSr';
 alias man='manwrapper';
 alias parole='kpcli --kdb "$HOME/keys/kee-parole.kdbx" --histfile /dev/null';
 alias sshvpn='sudo sshuttle -r avassi@192.168.0.10 0.0.0.0/0 -vv --dns --python=/usr/local/bin/python3'
+alias getpubip="curl ifconfig.me; echo;"
+alias hitman="steam steam://rungameid/236870"

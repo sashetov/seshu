@@ -17,3 +17,4 @@ rax2
 logs
 *.log
 prefix
+.env

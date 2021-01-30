@@ -1,0 +1,8 @@
+#!/bin/bash
+Y=$(date +%Y)
+SRC="/data/pics/$Y/"
+rm -f $HOME/Pictures/*;
+mkdir -p $HOME/Pictures/;
+mkdir -p $SRC;
+cd $HOME/Pictures/;
+find $SRC | while read f; do ln -s $f; done;

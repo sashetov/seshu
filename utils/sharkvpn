@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import os
+import sys
+openvpn_user = os.getenv("OPENVPN_USERNAME")
+openvpn_pass = os.getenv("OPENVPN_PASSWORD")
+try:
+    import pexpect
+except ImportError:
+    sys.stderr.write("You do not have 'pexpect' installed.\n")
+    sys.exit(1)
+child = pexpect.spawn(
+    "sudo openvpn /etc/openvpn/us-sfo.prod.surfshark.com_udp.ovpn")
+child.logfile = sys.stdout.buffer
+child.expect("Enter Auth Username:")
+child.send(openvpn_user + "\r")
+child.expect("Enter Auth Password:")
+child.send(openvpn_pass + "\r")
+child.expect("Initialization Sequence Completed")
+child.interact() # Give control of the child to the user.
