@@ -32,7 +32,7 @@ function print_full_stat {
   while [ $i -lt  ${#printfHeaders[*]} ]; do export H="${printfHeaders[$i]}"; export C="${C}${H}\n"; let i++; done;
   export C="${C}"'EOF\n" ';
   if [ x"$1"x = 'xx' ]; then export C="${C}"'.* * '; else export C="${C}"'$* '; fi
-  column -t -s ',' -o ' ' < <( print_header; while read var; do if [[ $var != "EOF" ]]; then printf "'%b'," "$var" | sed -r "s/'//g"; else echo; fi done < <( eval $C ); );
+  column -t -s ',' -o ' ' < <( print_header; while read var; do if [[ $var != "EOF" ]]; then printf "'%b'," "$var" | sed -r "s/'//g"; else echo; fi done < <( eval "$C" ); );
 }
 function __main__() {
   include_common

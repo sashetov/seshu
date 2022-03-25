@@ -64,4 +64,4 @@ alias man='manwrapper';
 alias parole='kpcli --kdb "$HOME/keys/kee-parole.kdbx" --histfile /dev/null';
 alias sshvpn='sudo sshuttle -r avassi@192.168.0.10 0.0.0.0/0 -vv --dns --python=/usr/local/bin/python3'
 alias getpubip="curl ifconfig.me; echo;"
-alias hitman="steam steam://rungameid/236870"
+alias pactlloopback='pactl load-module module-loopback'
