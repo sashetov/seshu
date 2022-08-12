@@ -62,6 +62,9 @@ alias lt='l -Str';
 alias lh='l -thSr';
 alias man='manwrapper';
 alias parole='kpcli --kdb "$HOME/keys/kee-parole.kdbx" --histfile /dev/null';
-alias sshvpn='sudo sshuttle -r avassi@192.168.0.10 0.0.0.0/0 -vv --dns --python=/usr/local/bin/python3'
+alias sshvpn='sshuttle -r myuserthere@there 0.0.0.0/0 -vv --python=/Users/myuserthere/.pyenv/versions/3.9.1/bin/python3 --ssh-cmd "ssh -i ~/.ssh/id_rsa"' # --dns ( doesnt seem to work, use hosts file instead)
 alias getpubip="curl ifconfig.me; echo;"
 alias pactlloopback='pactl load-module module-loopback'
+alias startvnc='x11vnc -auth guess -forever -loop -noxdamage -repeat -rfbauth ~/.vnc/passwd -rfbport 5900 -shared'
+alias exifscrub_destructive="exiftool -overwrite_original -LensIDNumber= -SerialNumber= -LensSerialNumber= -ShutterCount= -Keywords= -Subject= -ThumbnailImage= -PhotoshopThumbnail= -XMP:All= "
+alias sr="songrec"

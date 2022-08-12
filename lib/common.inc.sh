@@ -389,89 +389,18 @@ function parse_git_branch() {                                                 #P
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1?)/';
   fi;
 }
-function color_branch(){
-  BRANCH="$( parse_git_branch )";
-  echo -ne "\e[2;49;91m${BRANCH}\e[m"
-}
+
 function last_basename {
   LINKPATH=$(readlink -f .);
   CWD=$(basename "$LINKPATH"); #1
   printf '%b' $CWD;
   return $?
 }
-function print_patriotic(){
-  echo -ne "\e[7;102;30m[\e[m\e[7;49;39m${1}\e[m\e[7;49;92m${2}\e[7;107;31m${3}\e[m\e[7;102;30m]\e[m"
-}
-function normal_prompt(){ 
-  echo -ne ""
-}
-function prompt_dtcwd(){
-  echo -ne "\e[$( date +%T )\e[m\e[4;40;36m$( date +%D%Z )\e[m\e[1;40;37m$( short_cwd )\e[m";
-}
-function work_prompt(){
-  echo -ne "$(datets_print) ";
-}
-function long_ass_prompt(){
-  MYUSER="$(whoami)"                        && export MYUSER;
-  MYHOST="$(hostname -s)"                   && export MYHOST; #\e[38;5;5m${MYUSER}\e[0m@\e[38;5;220m${MYHOST}\e[0m:
-  CWD_FULL=$('pwd')                         && export CWD_FULL;
-  CURR_DIR="$(basename ${CWD_FULL})"        && export CURR_DIR;
-  PARENT_DIR="$(dirname ${CWD_FULL})"       && export PARENT_DIR;
-  W=$( cat /proc/loadavg | awk '{print $1" "$2" "$3}' ) && export W
-  echo -ne "[\e[38;5;7m$W\e[0m]\e[38;5;220m${MYHOST}\e[0m\e[4;40;36m${PARENT_DIR}/\e[m\e[38;5;69m${CURR_DIR}\e[0m/";
-}
-function real_cwd(){
-  LINKPATH=$(readlink -f .);
-  echo $LINKPATH;
-  return $?;
-}
-function short_uname(){
-  printf "%b" `whoami`;
-  return $?;
-}
-function short_hostname(){
-  printf "%b" `nisdomainname -s`;
-  return $?;
-}
-function short_cwd(){
-  start_xtrace
-  local PATH_CWD_SHORT='';
-  local REAL_CWD=$( real_cwd );
-  local DIRS_LTR="$( dirname "$REAL_CWD" | tr '/' ' ' )";
-  local CWD_NAME="$( basename "$REAL_CWD" )";
-  for LTR_DIR in $DIRS_LTR; do {
-    local FIRST_CHAR=$( echo $LTR_DIR | head -c 1 );
-    PATH_CWD_SHORT="${PATH_CWD_SHORT}/${FIRST_CHAR}";
-  }; done;
-  PATH_CWD_SHORT="${PATH_CWD_SHORT}/$CWD_NAME";
-  echo $PATH_CWD_SHORT
-  stop_xtrace
-  return $?;
-}
+
 function set_prompt_PS1(){
   start_xtrace
   unset PS1
   export PS1=''
-  export P="$";
-  if [[ $PS1_TYPE = 'DATE_TIME_CWD' ]]; then #PROMPT PREFIXES
-    export PS1+='$( prompt_dtcwd )';
-  elif [[ $PS1_TYPE = 'PATRIOTIC' ]]; then
-    export PS1+='$( print_patriotic @ $( -s) $( date +%e%T ):$/)';
-  elif [[ $PS1_TYPE = 'SHORT_PATRIOTIC' ]]; then
-    export PS1+='$( print_patriotic "$( short_uname )" "@$( short_hostname )" ":$( short_cwd )" )';
-  elif [[ $PS1_TYPE = "FULL_LINE_OVERFLOWS" ]]; then
-    export PS1+='$( long_ass_prompt )\n'; 
-  elif [[ $PS1_TYPE = "work_prompt" ]]; then
-    export PS1+='$( work_prompt)';
-  else 
-    export PS1='';
-  fi;
-  if [[ $GIT_BRANCH_PS1 != 0 ]]; then #POSTFIXES
-    export PS1+='$( color_branch )';
-  fi;
-  if [ "$ENABLE_RANDOM_IMAGES_DISPLAY" -gt 0 ]; then
-    export PS1+='$( display_rand_img )'
-  fi;
-  export PS1+='\[\033[5;41;37m\]${P}\[\033[0m\] '
+  export PS1+='\[\033[5;41;37m\]$\[\033[0m\] '
   stop_xtrace;
 }

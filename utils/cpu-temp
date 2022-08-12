@@ -1,0 +1,8 @@
+#!/bin/bash
+# prints average cpu temperature accross all the cores, for slstatus
+T=$(sensors | grep Core | awk '{ print $3; }' | sed -r 's/[\+°C]//g' | tr '\n' '+' );
+T=${T::-1};
+N=$(echo $T | tr '+' '\n' |wc -l);
+AVE_T=$(python -c "print(round( ($T)/$N))");
+#echo "($T)/$N = $AVE_T";
+echo "C:${AVE_T}°c"

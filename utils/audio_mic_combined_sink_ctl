@@ -1,0 +1,40 @@
+#!/bin/bash
+# good for sending your audio output to signal or zoom etc
+function ee(){
+  echo $*
+  eval $*
+}
+if [ $# -lt 1 ]; then
+  echo "$0 (start|end)"
+  echo "start - starts the sinks 'transmit' and 'combined'"
+  echo "end   - removes the sinks"
+  exit 1;
+fi
+function print_usage(){
+  echo "Usage:"
+  echo "  $0 start MIC_SRC_NAME"
+  echo "  $0 end - ends it all"
+}
+function start_sinks(){
+  MIC_SRC=$1
+  ee pactl load-module module-null-sink sink_name=transmit
+  ee pacmd 'update-sink-proplist transmit device.description="transmit"'
+  ee pacmd 'update-source-proplist transmit.monitor device.description="transmit.mon"'
+  ee pactl load-module module-null-sink sink_name=combined
+  ee pacmd 'update-sink-proplist combined device.description="transmit.and.mic"'
+  ee pacmd 'update-source-proplist combined.monitor device.description="transmit.and.mic.mon"'
+  ee pactl load-module module-loopback source="$MIC_SRC" sink=combined
+  ee pactl load-module module-loopback source=transmit.monitor sink=combined
+}
+
+function end_sinks(){
+  ee pactl unload-module module-loopback
+  ee pactl unload-module module-null-sink
+}
+if [ $# -lt 1 ]; then print_usage; fi
+if [ $1 == "start" ]; then
+  if [ $# -lt 2 ]; then print_usage; fi
+  start_sinks $2
+elif [ $1 == "end" ]; then
+  end_sinks
+fi

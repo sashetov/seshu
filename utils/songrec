@@ -1,0 +1,4 @@
+#!/bin/bash
+# listens to your audio output and does shazzam type shit
+# https://flathub.org/apps/details/com.github.marinm.songrec
+flatpak run com.github.marinm.songrec

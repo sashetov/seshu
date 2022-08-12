@@ -1,0 +1,6 @@
+#!/bin/bash
+# if you have nvidia gpu will work and print temp in celsius, for slstatus
+# also works:
+#nvidia-smi dmon -c 1 | tail -n 1 | awk '{ print $3;}'
+GPUTEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader)
+echo "G:${GPUTEMP}°C"
