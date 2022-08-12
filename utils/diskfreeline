@@ -1,0 +1,3 @@
+#!/bin/bash
+# prints disk free space descriptions for slstatus
+df -h /home /data / /tmp | tail -n4 | awk '{ print $4}' | tr '\n' ' ' | awk '{ print "/home:"$1 " /data:"$2 " /:"$3 " /tmp:"$4"" }'
