@@ -1,3 +1,3 @@
 #!/bin/bash
-#lets you run a second copy of signal in a different dir
-signal-desktop --user-data-dir=$HOME/.config/Signal-2
+#signal-desktop --user-data-dir=$HOME/.config/Signal-2
+flatpak run org.signal.Signal --user-data-dir=/home/sasheto/.var/app/org.signal.Signal/config/Signal-2

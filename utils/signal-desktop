@@ -1,0 +1,2 @@
+#!/bin/bash
+flatpak run org.signal.Signal --user-data-dir=$HOME/.var/app/org.signal.Signal/config/Signal

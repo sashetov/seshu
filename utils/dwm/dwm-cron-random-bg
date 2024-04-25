@@ -140,7 +140,7 @@ function __main__(){
   export LOG_TO_SYSLOG='';
   export LOGDIR='';
   export DEFAULT_BGOPT='--bg-max'
-  export DEFAULT_IFILTER='(albums/fb|(jpg|png|gif)$)';
+  export DEFAULT_IFILTER='(albums/fb|(jpeg|jpg|png|gif)$)';
   export DEFAULT_XFILTER='\s';
   export DISPLAY=$( get_display )
   export J=0;

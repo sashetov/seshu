@@ -1,5 +1,2 @@
 #!/bin/bash
-# prints only the temp in celsius and wind factor, for slstatus
-WL=$(curl 'wttr.in/?m&0&T&Q' 2>/dev/null | cut -c 17-100 | head -n3 | tail -n2)
-WL=$( echo $WL | sed -r 's/[\s \t]//g')
-echo "W:${WL}"
+echo W:$(curl 'wttr.in/?m&0&T&Q' 2>/dev/null | cut -c 17-100 | head -n3 | tail -n2 | sed -r 's/[\s \t]//g')

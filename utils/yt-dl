@@ -1,3 +1,4 @@
 #!/bin/bash
 export URLS="$*";
-/usr/local/bin/youtube-dl  --cookies ~/Downloads/youtube.com_cookies.txt --user-agent "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -o '%(title)s.%(ext)s' --extract-audio --audio-format=mp3 $URLS
+export BIN="/usr/local/bin/yt-dlp"
+$BIN  --cookies ~/Downloads/youtube.com_cookies.txt --user-agent "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -o '%(title)s.%(ext)s' --extract-audio --audio-format=mp3 $URLS

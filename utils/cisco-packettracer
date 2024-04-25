@@ -1,0 +1,2 @@
+#!/bin/bash
+/opt/pt/packettracer --no-sandbox args

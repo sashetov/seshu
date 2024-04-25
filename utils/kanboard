@@ -1,0 +1,2 @@
+#!/bin/bash
+docker run -v /data/kanboard/app/data/:/var/www/app/data -d --name kanboard -p 7777:80 -t kanboard/kanboard

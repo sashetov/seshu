@@ -1,0 +1,4 @@
+#!/bin/bash
+export DISPLAY=$(w $(id -un) 2>&1 |grep -v 'FROM|load ave' | awk '{ print $2;}' | grep ':[0-9]' | head -n1);
+redshift -x;
+redshift -O2800; # day display

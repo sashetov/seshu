@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+sudo su - jellyfin -c '. /etc/sysconfig/jellyfin cd /var/lib/jellyfin && /usr/bin/jellyfin $JELLYFIN_WEB_OPT $JELLYFIN_RESTART_OPT $JELLYFIN_FFMPEG_OPT $JELLYFIN_SERVICE_OPT $JELLYFIN_NOWEBAPP_OPT $JELLYFIN_ADDITIONAL_OPTS'

@@ -34,7 +34,8 @@ alias n='';
 alias N='';
 alias o='';
 alias O='';
-alias p='ps --headers axm -e --format args:1000,ppid:7,pid:6,nlwp:7,spid:7,%mem:7,%cpu:7,atime:7,f:4,nwchan:8,vsize:16,rss:20,euser:20,longtname:5,lstart:25,bsdstart:7,bsdstart:7,pending:10,ignored:10,caught:9,blocked:10,ni:5,etime:10,class:6,uunit:20,unit:30,utsns:10,userns:10,pidns:10,netns:10,mntns:10,ipcns:10,cpuid:6,longtname:6,m_trs:6,tpgid:8,tid:6,tgid:7,rsz:5,svuid:8,svgid:8,fsuser:8,supgrp:20,supgid:20,fsuid:7,stat:7,stackp:10,esp:10,eip:10,slice:30,m_size:7,sid:6,fsgroup:9,fsgid:7,lsession:10,lsession:7,seat:7,sched:6,ruser:8,ruid:7,rtprio:8';
+#alias p='ps --headers axm -e --format args:1000,ppid:7,pid:6,nlwp:7,spid:7,%mem:7,%cpu:7,atime:7,f:4,nwchan:8,vsize:16,rss:20,euser:20,longtname:5,lstart:25,bsdstart:7,bsdstart:7,pending:10,ignored:10,caught:9,blocked:10,ni:5,etime:10,class:6,uunit:20,unit:30,utsns:10,userns:10,pidns:10,netns:10,mntns:10,ipcns:10,cpuid:6,longtname:6,m_trs:6,tpgid:8,tid:6,tgid:7,rsz:5,svuid:8,svgid:8,fsuser:8,supgrp:20,supgid:20,fsuid:7,stat:7,stackp:10,esp:10,eip:10,slice:30,m_size:7,sid:6,fsgroup:9,fsgid:7,lsession:10,lsession:7,seat:7,sched:6,ruser:8,ruid:7,rtprio:8';
+alias p='ps auxf';
 alias P='pstree -AanlcpuSshgnZ';
 alias q='exit';
 alias Q='';
@@ -65,6 +66,10 @@ alias parole='kpcli --kdb "$HOME/keys/kee-parole.kdbx" --histfile /dev/null';
 alias sshvpn='sshuttle -r myuserthere@there 0.0.0.0/0 -vv --python=/Users/myuserthere/.pyenv/versions/3.9.1/bin/python3 --ssh-cmd "ssh -i ~/.ssh/id_rsa"' # --dns ( doesnt seem to work, use hosts file instead)
 alias getpubip="curl ifconfig.me; echo;"
 alias pactlloopback='pactl load-module module-loopback'
-alias startvnc='x11vnc -auth guess -forever -loop -noxdamage -repeat -rfbauth ~/.vnc/passwd -rfbport 5900 -shared'
+#alias startvnc='x11vnc -auth guess -forever -loop -noxdamage -repeat -rfbauth ~/.vnc/passwd -rfbport 5900 -shared'
+alias startvnc='x11vnc -auth guess -forever -loop -noxdamage -repeat -rfbport 5900 -shared'
 alias exifscrub_destructive="exiftool -overwrite_original -LensIDNumber= -SerialNumber= -LensSerialNumber= -ShutterCount= -Keywords= -Subject= -ThumbnailImage= -PhotoshopThumbnail= -XMP:All= "
 alias sr="songrec"
+alias ts='tmuxp load ~/tmuxp/default.yaml'
+alias jellyfin='sudo su - jellyfin -c ". /etc/sysconfig/jellyfin; /usr/bin/jellyfin $JELLYFIN_WEB_OPT $JELLYFIN_RESTART_OPT $JELLYFIN_FFMPEG_OPT $JELLYFIN_SERVICE_OPT $JELLYFIN_NOWEBAPP_OPT $JELLYFIN_ADDITIONAL_OPTS"'
+alias whatsapp='flatpak run io.github.mimbrero.WhatsAppDesktop'
